@@ -87,6 +87,7 @@ void displayHeader() {
     std::cout << "Welcome to CSOPESY Emulator!\n" << std::endl;
     std::cout << "Developers:" << std::endl;
     std::cout << "Tujan, Lucas Antonio V F." << std::endl; //Add niyo nalang names niyo dito guyss
+    std::cout << "Alviar, Kelvin Audric T."  << std::endl; 
     std::cout << "\nLast updated: 05-15-2026" << std::endl;
     std::cout << "------------------------------------------" << std::endl;
 }
