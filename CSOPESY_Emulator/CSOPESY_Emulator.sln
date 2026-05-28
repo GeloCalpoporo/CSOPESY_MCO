@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37314.3 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CSOPESY_Emulator", "CSOPESY_Emulator\CSOPESY_Emulator.vcxproj", "{11C75AE6-B863-494A-9D0D-B9C516162679}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{11C75AE6-B863-494A-9D0D-B9C516162679}.Debug|x64.ActiveCfg = Debug|x64
+		{11C75AE6-B863-494A-9D0D-B9C516162679}.Debug|x64.Build.0 = Debug|x64
+		{11C75AE6-B863-494A-9D0D-B9C516162679}.Debug|x86.ActiveCfg = Debug|Win32
+		{11C75AE6-B863-494A-9D0D-B9C516162679}.Debug|x86.Build.0 = Debug|Win32
+		{11C75AE6-B863-494A-9D0D-B9C516162679}.Release|x64.ActiveCfg = Release|x64
+		{11C75AE6-B863-494A-9D0D-B9C516162679}.Release|x64.Build.0 = Release|x64
+		{11C75AE6-B863-494A-9D0D-B9C516162679}.Release|x86.ActiveCfg = Release|Win32
+		{11C75AE6-B863-494A-9D0D-B9C516162679}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6C2C7AE3-3303-4CC3-B734-65F9ACACB572}
+	EndGlobalSection
+EndGlobal
