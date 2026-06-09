@@ -28,7 +28,14 @@ set(IMGUI_SOURCES
 )
 
 # 7. Create the actual executable application out of main.cpp and ImGui
-add_executable(OS_Mockup main.cpp ${IMGUI_SOURCES})
+add_executable(OS_Mockup main.cpp Desktop.cpp Bootloader.cpp ${IMGUI_SOURCES} )
 
 # 8. Link GLFW and OpenGL to the executable
 target_link_libraries(OS_Mockup PRIVATE glfw OpenGL::GL)
+
+# 9. Automatically copy the assets folder to the build directory 
+add_custom_command(TARGET OS_Mockup POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+    "$<TARGET_FILE_DIR:OS_Mockup>/assets"
+)
