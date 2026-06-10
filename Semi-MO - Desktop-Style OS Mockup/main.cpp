@@ -12,6 +12,8 @@
 #include "Bootloader.h"
 #include "Desktop.h"
 #include "Taskbar.h"
+#include "AppWindow1.h"   // Member 3: File Explorer
+#include "AppWindow2.h"   // Member 3: System Settings
 
 // Helper: load image file → OpenGL texture
 bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height) {
@@ -125,8 +127,8 @@ int main() {
             if (app_state.show_task_manager)
                 RenderTaskManager(&app_state.show_task_manager);
 
-            // if (app_state.show_app1) RenderAppWindow1(&app_state.show_app1);
-            // if (app_state.show_app2) RenderAppWindow2(&app_state.show_app2);
+            if (app_state.show_app1) RenderAppWindow1(&app_state.show_app1);
+            if (app_state.show_app2) RenderAppWindow2(&app_state.show_app2);
         }
 
         ImGui::Render();
