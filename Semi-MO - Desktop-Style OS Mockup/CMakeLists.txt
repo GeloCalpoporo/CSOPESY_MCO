@@ -14,28 +14,33 @@ find_package(OpenGL REQUIRED)
 
 # 5. Tell CMake where to look for ImGui header files
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/imgui)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/imgui) # (Backend headers are in the same folder now)
 
 # 6. Gather all the ImGui source files
 set(IMGUI_SOURCES
-    imgui/imgui.cpp
-    imgui/imgui_demo.cpp
-    imgui/imgui_draw.cpp
-    imgui/imgui_tables.cpp
-    imgui/imgui_widgets.cpp
-    imgui/imgui_impl_glfw.cpp
-    imgui/imgui_impl_opengl3.cpp
+        imgui/imgui.cpp
+        imgui/imgui_demo.cpp
+        imgui/imgui_draw.cpp
+        imgui/imgui_tables.cpp
+        imgui/imgui_widgets.cpp
+        imgui/imgui_impl_glfw.cpp
+        imgui/imgui_impl_opengl3.cpp
 )
 
-# 7. Create the actual executable application out of main.cpp and ImGui
-add_executable(OS_Mockup main.cpp Desktop.cpp Bootloader.cpp ${IMGUI_SOURCES} )
+# 7. Create the actual executable — now includes Taskbar (Member 2)
+add_executable(OS_Mockup
+        main.cpp
+        Desktop.cpp
+        Bootloader.cpp
+        Taskbar.cpp         # Member 2: Taskbar + Task Manager
+        ${IMGUI_SOURCES}
+)
 
 # 8. Link GLFW and OpenGL to the executable
 target_link_libraries(OS_Mockup PRIVATE glfw OpenGL::GL)
 
-# 9. Automatically copy the assets folder to the build directory 
+# 9. Automatically copy the assets folder to the build directory
 add_custom_command(TARGET OS_Mockup POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-    "$<TARGET_FILE_DIR:OS_Mockup>/assets"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        "$<TARGET_FILE_DIR:OS_Mockup>/assets"
 )
