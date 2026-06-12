@@ -1,6 +1,6 @@
 #include "AppWindow1.h"
 #include <cstring>
-
+#include <cstdio>
 // ============================================================
 // COMPONENT: FILE EXPLORER (App Window 1)
 // A mockup file explorer with sidebar navigation and file list
@@ -219,7 +219,7 @@ void RenderAppWindow1(bool* p_open) {
         char label[64];
         snprintf(label, sizeof(label), "  %s##sb%d", sidebar_items[i], i);
         if (ImGui::Selectable(label, selected,
-                              ImGuiSelectableFlags_SpanAvailWidth,
+                              0,
                               ImVec2(0, 26))) {
             fe_selected_location = i;
             fe_selected_file     = -1;

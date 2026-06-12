@@ -370,7 +370,7 @@ void RenderAppWindow2(bool* p_open) {
 
                     ImGui::SetCursorPosX(4);
                     if (ImGui::Selectable(lbl, sel,
-                                          ImGuiSelectableFlags_SpanAvailWidth,
+                                          0,
                                           ImVec2(0, 30)))
                         ss_wifi_idx = i;
 

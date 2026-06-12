@@ -1,6 +1,5 @@
 #include "Taskbar.h"
 #include <cmath>
-#include <cstdlib>
 #include <cstdio>
 
 #define ICON_FA_PLAY   "\xef\x81\x8b"
