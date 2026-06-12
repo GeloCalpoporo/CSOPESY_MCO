@@ -5,7 +5,7 @@
 
 #define ICON_FA_PLAY   "\xef\x81\x8b"
 #define ICON_FA_STOP   "\xef\x81\x8d"
-#define ICON_FA_MAGNIFY "\xef\x80\x82"
+#define ICON_FA_GEAR "\xef\x80\x93"
 #define ICON_FA_VOLUME  "\xef\x80\xa8"
 #define ICON_FA_WIFI    "\xef\x87\xab"
 #define ICON_FA_POWER   "\xef\x80\x91"
@@ -186,12 +186,12 @@ void RenderTaskbar(AppState& state, GLFWwindow* window, const TaskbarIcons& icon
     ImGui::SameLine(); ImGui::SetCursorPosY(btn_y);
 
     // ── SRCH — FA magnifier ───────────────────────────────────────────
-    if (IconButton(ICON_FA_MAGNIFY "  SRCH", ImVec2(84, btn_h),
+    if (IconButton(ICON_FA_GEAR "  SETTINGS", ImVec2(95, btn_h),
                    IM_COL32(22, 25, 35, 255),
                    IM_COL32(34, 38, 54, 255),
                    IM_COL32(160, 165, 195, 255)))
         state.show_app2 = !state.show_app2;
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Search / Settings");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Settings");
 
     // ── RIGHT SIDE — VOL  NET  |  PWR ────────────────────────────────
     // Calculate exact right-side position so PWR stays fully on screen
