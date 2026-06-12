@@ -1,6 +1,7 @@
 #include "AppWindow1.h"
 #include <cstring>
 #include <cstdio>
+
 // ============================================================
 // COMPONENT: FILE EXPLORER (App Window 1)
 // A mockup file explorer with sidebar navigation and file list

@@ -329,8 +329,8 @@ void RenderAppWindow2(bool* p_open) {
             ToggleSwitch("##airplane", &ss_airplane);
             ImGui::SameLine();
             ImGui::PushStyleColor(ImGuiCol_Text,
-                ss_airplane ? IM_COL32(248,113,113,255) : IM_COL32(130,138,168,255));
-            ImGui::Text(ss_airplane ? "On — radios off" : "Off");
+                ss_airplane ? IM_COL32(74,222,128,255) : IM_COL32(130,138,168,255));
+            ImGui::Text(ss_airplane ? "Enabled" : "Disabled");
             ImGui::PopStyleColor();
 
             ImGui::Spacing();
