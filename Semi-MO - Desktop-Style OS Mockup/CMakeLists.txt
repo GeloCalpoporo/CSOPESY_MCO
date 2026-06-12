@@ -26,12 +26,14 @@ set(IMGUI_SOURCES
         imgui/imgui_impl_opengl3.cpp
 )
 
-# 7. Create the actual executable — now includes Taskbar (Member 2)
+# 7. Create the actual executable
 add_executable(OS_Mockup
         main.cpp
         Desktop.cpp
         Bootloader.cpp
         Taskbar.cpp         # Member 2: Taskbar + Task Manager
+        AppWindow1.cpp      # Member 3: File Explorer
+        AppWindow2.cpp      # Member 3: System Settings
         ${IMGUI_SOURCES}
 )
 
