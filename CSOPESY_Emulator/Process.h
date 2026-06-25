@@ -1,44 +1,68 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <mutex>
+#include <cstdint>
+#include <unordered_map>
+#include <random>
 
-// ================================================================
-// Process.h  —  For Member 2 implements Process.cpp
-// ================================================================
-// ConsoleManager and Scheduler both hold shared_ptr<Process>.
-// Fill in the constructor body and executeNextInstruction().
-// DO NOT change the public fields/methods below without coordinating.
-// ================================================================
-
+//
+// Process: the "dummy program" running inside the emulator.
+// Owns its own isolated local memory (variables), its instruction stream,
+// a program counter, and a print-log history that the UI (Role 1) reads.
+// The Scheduler (Role 3) drives it one instruction per CPU tick.
+//
 class Process {
+
 public:
-	// Identifier/Identity Process Name ID 
-	std::string name; 
-	int pid = 0; 
+    // ----- Instruction model -----
+    enum class InstrType { DECLARE, ADD, SUBTRACT, PRINT, SLEEP, FOR };
 
-	// Instruction Tracking (program Counter)
-	int currentLine = 0; // # of instructions that have been executed so far
-	int totalLines = 0;  // Total # of instructions in the process 
-	
-	// Runtime state 
-	int coreId = -1; 
-	bool isFinished = false;
+    struct Instruction {
+        InstrType   type = InstrType::PRINT;
+        std::string a1;            // target variable (DECLARE/ADD/SUBTRACT)
+        std::string a2, a3;        // operands: variable name OR numeric literal
+        std::string message;       // PRINT literal ("" => default greeting)
+        std::string printVar;      // optional variable appended to a PRINT
+        uint16_t    value = 0;     // DECLARE value / SLEEP ticks
+    };
 
-	// Timestamp (set at creation)
-	std::string createdAt; // format is: MM/DD/YYYY HH:MM:SSAM
+    // ----- Construction (signature kept for Role 1 / Role 3 compatibility) -----
+    Process(const std::string& name, int pid, int totalLines, const std::string& createdAt);
 
-	// Print log (output of -PRINT- instrcutions)
-	// Scheduler/Process writes here; ConsoleManager reads here for process-smi
-	std::vector<std::string> printLogs;
-	std::mutex logMutex; // Lock before touching printLogs
-	
-	// Constructor
-	// Member 2 will implement here, body will be in Process.cpp
-	Process(const std::string& name, int pid, int totalLines, const std::string& createdAt);
+    // Fill this process with a randomized program. FOR loops are unrolled
+    // (nested up to 3 levels). Sets totalLines to the final instruction count.
+    // Role 3 calls this with a count in [min-ins, max-ins].
+    void generateInstructions(int count, unsigned seed);
 
-	// Called by Scheduler once per CPU tick
-	// Member 2 will implement here, execute one instruction, advances currentLine
-	// sets isFinished to true if currentLine >= totalLines, or when all instructions are executed/done
-	void executeNextInstruction();
-};	
+    // Executed exactly ONCE per CPU tick by the Scheduler. No internal loop.
+    void executeNextInstruction();
+
+    bool isSleeping() const { return sleepTicksRemaining > 0; }
+
+    // ----- Public state read by the ConsoleManager UI -----
+    std::string name;
+    int         pid = 0;
+    int         totalLines = 0;
+    std::string createdAt;
+    int         currentLine = 0;
+    bool        isFinished = false;
+    int         coreId = -1;            // assigned by the Scheduler
+
+    std::mutex               logMutex;  // guards printLogs (UI reads, CPU writes)
+    std::vector<std::string> printLogs;
+
+private:
+    std::unordered_map<std::string, uint16_t> variables;  // isolated local memory
+    std::vector<Instruction>                  instructions; // flattened stream
+    int sleepTicksRemaining = 0;
+
+    void     executeOne(const Instruction& ins);
+    uint16_t resolve(const std::string& token);      // literal or variable (auto-declares to 0)
+    static uint16_t clampU16(long v);                // clamp to [0, 65535]
+    std::string timestamp() const;
+
+    // generation: appends flattened instructions until instructions.size() >= target
+    void genFlat(int target, int depth, std::mt19937& rng);
+};
