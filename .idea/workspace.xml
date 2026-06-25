@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
+  </component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
+  <component name="CMakeProjectFlavorService">
+    <option name="flavorId" value="CMakePlainProjectFlavor" />
+  </component>
+  <component name="CMakeReloadState">
+    <option name="reloaded" value="true" />
+  </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated>
+      <config projectName="CSOPESY_Emulator" targetName="CSOPESY_Emulator" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" GENERATION_OPTIONS="-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="9b424b38-1115-449b-81e2-ba8e152d1d6d" name="Changes" comment="Member 2: Add Taskbar, Task Manager, and integrate with Desktop&#10;&#10;- Added Taskbar.cpp and Taskbar.h (Component 2 &amp; 3)&#10;- Taskbar: fixed bottom panel with PNG icons, FA buttons, PWR shutdown&#10;- Task Manager: process table with dummy values, performance graphs&#10;- Modified Desktop.cpp: reduced height for taskbar, removed PWR button&#10;- Modified main.cpp: font loading, PNG icon loading, render loop hooks&#10;- Modified CMakeLists.txt: added Taskbar.cpp to build target&#10;- Added assets: fa-solid-900.ttf, icon_files.png, icon_init.png, icon_taskmgr.png">
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CSOPESY_Emulator/Process.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/CSOPESY_Emulator/Process.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CSOPESY_Emulator/Process.h" beforeDir="false" afterPath="$PROJECT_DIR$/CSOPESY_Emulator/Process.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CSOPESY_Emulator/config.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CSOPESY_Emulator/config.txt" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;history&quot;: [
+    {
+      &quot;state&quot;: &quot;OPEN&quot;,
+      &quot;author&quot;: &quot;GeloCalpoporo&quot;
+    },
+    {
+      &quot;state&quot;: &quot;OPEN&quot;
+    }
+  ],
+  &quot;lastFilter&quot;: {}
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/GeloCalpoporo/CSOPESY_MCO.git&quot;,
+    &quot;accountId&quot;: &quot;154049f9-91ec-4d1e-b919-73bfbbea2034&quot;
+  }
+}</component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="RrU5DpYS" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2026" />
+    <option name="minorVersion" value="2" />
+    <option name="productBranch" value="Classic" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3EvzofBBkAGYmB4jZsJL6N18Anj" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "CMake Application.CSOPESY_Emulator.executor": "Run",
+    "CMake Application.OS_Mockup.executor": "Run",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "RunOnceActivity.west.config.association.type.startup.service": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "mco1",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/Users/Angelo Calpoporo/CLionProjects/CSOPESY_MCO/Semi-MO - Desktop-Style OS Mockup/assets",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "CMakeSettings"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Angelo Calpoporo\CLionProjects\CSOPESY_MCO\Semi-MO - Desktop-Style OS Mockup\assets" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="CSOPESY_Emulator" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="CSOPESY_Emulator" TARGET_NAME="CSOPESY_Emulator" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="CSOPESY_Emulator" RUN_TARGET_NAME="CSOPESY_Emulator">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9b424b38-1115-449b-81e2-ba8e152d1d6d" name="Changes" comment="" />
+      <created>1781074007445</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1781074007445</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
+    <isAutomaticBootstrapAfterUpdate value="false" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/Desktop-Style-OS-Mockup" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="add: bootloader, desktop UI, image loader &amp; assets&#10;&#10;Introduce boot sequence UI and desktop components: add Bootloader.{cpp,h} (BIOS + splash screens) and Desktop.{cpp,h} (wallpaper rendering, clock, PWR button)." />
+    <MESSAGE value="Member 2: Add Taskbar, Task Manager, and integrate with Desktop&#10;&#10;- Added Taskbar.cpp and Taskbar.h (Component 2 &amp; 3)&#10;- Taskbar: fixed bottom panel with PNG icons, FA buttons, PWR shutdown&#10;- Task Manager: process table with dummy values, performance graphs&#10;- Modified Desktop.cpp: reduced height for taskbar, removed PWR button&#10;- Modified main.cpp: font loading, PNG icon loading, render loop hooks&#10;- Modified CMakeLists.txt: added Taskbar.cpp to build target&#10;- Added assets: fa-solid-900.ttf, icon_files.png, icon_init.png, icon_taskmgr.png" />
+    <option name="LAST_COMMIT_MESSAGE" value="Member 2: Add Taskbar, Task Manager, and integrate with Desktop&#10;&#10;- Added Taskbar.cpp and Taskbar.h (Component 2 &amp; 3)&#10;- Taskbar: fixed bottom panel with PNG icons, FA buttons, PWR shutdown&#10;- Task Manager: process table with dummy values, performance graphs&#10;- Modified Desktop.cpp: reduced height for taskbar, removed PWR button&#10;- Modified main.cpp: font loading, PNG icon loading, render loop hooks&#10;- Modified CMakeLists.txt: added Taskbar.cpp to build target&#10;- Added assets: fa-solid-900.ttf, icon_files.png, icon_init.png, icon_taskmgr.png" />
+  </component>
+</project>
