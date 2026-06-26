@@ -27,9 +27,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b424b38-1115-449b-81e2-ba8e152d1d6d" name="Changes" comment="Member 2: Add Taskbar, Task Manager, and integrate with Desktop&#10;&#10;- Added Taskbar.cpp and Taskbar.h (Component 2 &amp; 3)&#10;- Taskbar: fixed bottom panel with PNG icons, FA buttons, PWR shutdown&#10;- Task Manager: process table with dummy values, performance graphs&#10;- Modified Desktop.cpp: reduced height for taskbar, removed PWR button&#10;- Modified main.cpp: font loading, PNG icon loading, render loop hooks&#10;- Modified CMakeLists.txt: added Taskbar.cpp to build target&#10;- Added assets: fa-solid-900.ttf, icon_files.png, icon_init.png, icon_taskmgr.png">
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CSOPESY_Emulator/Process.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/CSOPESY_Emulator/Process.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CSOPESY_Emulator/Process.h" beforeDir="false" afterPath="$PROJECT_DIR$/CSOPESY_Emulator/Process.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CSOPESY_Emulator/Scheduler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/CSOPESY_Emulator/Scheduler.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CSOPESY_Emulator/Scheduler.h" beforeDir="false" afterPath="$PROJECT_DIR$/CSOPESY_Emulator/Scheduler.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CSOPESY_Emulator/config.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CSOPESY_Emulator/config.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
