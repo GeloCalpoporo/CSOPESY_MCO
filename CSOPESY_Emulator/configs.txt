@@ -1,0 +1,38 @@
+Plain Round Robin:
+num-cpu 4
+scheduler "rr"
+quantum-cycles 5
+batch-process-freq 10
+min-ins 1000
+max-ins 2000
+delay-per-exec 0
+
+
+Plain FCFS:
+num-cpu 4
+scheduler "fcfs"
+quantum-cycles 5
+batch-process-freq 10
+min-ins 1000
+max-ins 2000
+delay-per-exec 0
+
+Hybrid RR → FCFS, switch after 15 finish:
+num-cpu 4
+scheduler "rr/fcfs"
+quantum-cycles 5
+batch-process-freq 10
+min-ins 1000
+max-ins 2000
+delay-per-exec 0
+hybrid-switch-after-finished 15
+
+Hybrid FCFS → RR, switch after 3000 ticks:
+num-cpu 4
+scheduler "fcfs/rr"
+quantum-cycles 5
+batch-process-freq 10
+min-ins 1000
+max-ins 2000
+delay-per-exec 0
+hybrid-switch-after-ticks 3000
