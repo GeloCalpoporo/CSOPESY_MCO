@@ -56,6 +56,7 @@ private:
     std::shared_ptr<Process> findAny(const std::string& name);
     std::string              nextProcessName();
     int                      randomInstructionCount();
+    void                     loadHybridConfig();   // reads optional hybrid-switch-* keys
 
     Config config;
     int    numCores      = 1;
@@ -72,6 +73,18 @@ private:
 
     int nextPid = 1;
     int nameSeq = 0;
+
+    // --- Adaptive hybrid scheduler (optional enhancement) ---
+    // scheduler "rr/fcfs" starts in RR and switches to FCFS; "fcfs/rr" does the
+    // reverse. The switch fires once a threshold below is reached. Plain "rr"
+    // or "fcfs" run normally (spec behavior) and never switch.
+    bool               hybridForm          = false;  // scheduler given as "a/b"
+    bool               hybridEnabled       = false;
+    bool               hybridTargetRR      = false;  // mode to switch TO
+    bool               switched            = false;
+    unsigned long long switchAfterTicks    = 0;   // 0 = disabled
+    int                switchAfterFinished = 0;   // 0 = disabled
+    int                finishedCount       = 0;
 
     std::thread        schedulerThread;
     mutable std::mutex mtx;                             // guards cores/queues/processes
