@@ -4,6 +4,8 @@
 #include <chrono>
 #include <cstdio>
 #include <ctime>
+#include <fstream>
+#include <iostream>
 
 namespace {
     // Duration of one simulated CPU tick. Small enough to feel live, large
@@ -38,10 +40,27 @@ void Scheduler::initialize(const Config& cfg) {
         numCores      = cfg.num_cpu;
         if (numCores < 1)   numCores = 1;        // clamp [1, 128]
         if (numCores > 128) numCores = 128;
-        useRoundRobin = (cfg.scheduler == "rr");
+
+        // Scheduler field accepts plain "rr" / "fcfs", OR the hybrid forms
+        // "rr/fcfs" / "fcfs/rr"  =  startMode / targetMode-to-switch-to.
+        std::string sched = cfg.scheduler;
+        std::string startMode = sched, targetMode = sched;
+        auto slash = sched.find('/');
+        if (slash != std::string::npos) {
+            startMode  = sched.substr(0, slash);
+            targetMode = sched.substr(slash + 1);
+        }
+        useRoundRobin  = (startMode  == "rr");
+        hybridTargetRR = (targetMode == "rr");
 
         if (cores.empty())
             cores.resize(numCores);
+
+        // Optional enhancement: read hybrid-switch thresholds from config.txt.
+        switched = false;
+        loadHybridConfig();
+        hybridEnabled = (startMode != targetMode)
+                        && (switchAfterTicks > 0 || switchAfterFinished > 0);
     }
 
     // Spawn the tick thread exactly once, even if initialize is run again.
@@ -52,6 +71,17 @@ void Scheduler::initialize(const Config& cfg) {
 
 void Scheduler::startGeneration() { generating = true; }
 void Scheduler::stopGeneration()  { generating = false; }
+
+// Reads the two OPTIONAL hybrid keys. Absent keys leave the values at 0
+// (disabled), so a standard spec config behaves exactly as before.
+void Scheduler::loadHybridConfig() {
+    std::ifstream f("config.txt");
+    std::string key;
+    while (f >> key) {
+        if (key == "hybrid-switch-after-ticks")         f >> switchAfterTicks;
+        else if (key == "hybrid-switch-after-finished") f >> switchAfterFinished;
+    }
+}
 
 // ----- process construction helpers (caller holds mtx) -----
 int Scheduler::randomInstructionCount() {
@@ -144,6 +174,25 @@ void Scheduler::schedulerLoop() {
         {
             std::lock_guard<std::mutex> lock(mtx);
 
+            // (0) Adaptive switch: if running RR and a threshold is reached,
+            //     permanently switch to FCFS for the rest of the run.
+            if (hybridEnabled && !switched) {
+                bool byTicks    = (switchAfterTicks > 0 && cpuTicks >= switchAfterTicks);
+                bool byFinished = (switchAfterFinished > 0 && finishedCount >= switchAfterFinished);
+                if (byTicks || byFinished) {
+                    const char* from = useRoundRobin ? "Round Robin" : "FCFS";
+                    useRoundRobin = hybridTargetRR;          // flip to the target mode
+                    const char* to   = useRoundRobin ? "Round Robin" : "FCFS";
+                    switched = true;
+                    // Give every running process a fresh quantum for the new mode.
+                    for (auto& c : cores)
+                        if (c.proc) c.quantumLeft = static_cast<int>(config.quantum_cycles);
+                    std::cout << "\n[Scheduler] Adaptive switch: " << from << " -> " << to
+                              << " (tick " << cpuTicks << ", " << finishedCount
+                              << " finished)\n";
+                }
+            }
+
             // (1) Generation: every batch-process-freq ticks spawn one process.
             if (generating && config.batch_process_freq > 0
                 && (cpuTicks % config.batch_process_freq == 0)) {
@@ -172,7 +221,7 @@ void Scheduler::schedulerLoop() {
                 readyQueue.pop_front();
                 if (p->isFinished) continue;
                 cores[i].proc        = p;
-                cores[i].quantumLeft = useRoundRobin ? static_cast<int>(config.quantum_cycles) : 0;
+                cores[i].quantumLeft = static_cast<int>(config.quantum_cycles);  // FCFS ignores it
                 cores[i].delayLeft   = 0;
                 p->coreId            = i;
             }
@@ -199,6 +248,7 @@ void Scheduler::schedulerLoop() {
                 // Re-evaluate state after this tick. coreId is left untouched so the
                 // table keeps showing the last core a process held (never -1).
                 if (p->isFinished) {                      // done -> free the core
+                    finishedCount++;
                     c.proc = nullptr;
                 }
                 else if (p->isSleeping()) {               // SLEEP -> relinquish core
