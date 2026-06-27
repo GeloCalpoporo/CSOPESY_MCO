@@ -8,7 +8,7 @@ A command-line OS emulator with a process scheduler, built for CSOPESY (Operatin
 - Carlos, Miguel
 - Tujan, Nio
 
-**Last Updated:** 06-25-2026
+**Last Updated:** 06-27-2026
 
 ---
 
