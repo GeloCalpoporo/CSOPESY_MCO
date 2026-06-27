@@ -1,4 +1,4 @@
-# CSOPESY Emulator — MCO1
+# CSOPESY Emulator - MCO1
 
 A command-line OS emulator with a process scheduler, built for CSOPESY (Operating Systems).
 
@@ -40,7 +40,7 @@ A command-line OS emulator with a process scheduler, built for CSOPESY (Operatin
 ## Build Instructions
 
 ### CLion
-Open the project root in CLion — it will detect `CMakeLists.txt` and configure automatically. Hit **Run**.
+Open the project root in CLion - it will detect `CMakeLists.txt` and configure automatically. Hit **Run**.
 
 ### Visual Studio
 Open the project root folder. Visual Studio will detect `CMakeLists.txt` and offer CMake integration. Click **Enable and set source directory**, then build normally.
@@ -97,24 +97,13 @@ Once the banner appears, type commands at the `root:\>` prompt.
 
 ```
 num-cpu             4       # Number of CPU cores [1–128]
-scheduler           "rr"    # Scheduling algorithm: "rr", "fcfs", "rr/fcfs", "fcfs/rr"
+scheduler           "rr"    # Scheduling algorithm: "rr", "fcfs"
 quantum-cycles      5       # RR time slice in CPU ticks
 batch-process-freq  10      # Ticks between auto-generated processes
 min-ins             1000    # Minimum instructions per process
 max-ins             2000    # Maximum instructions per process
 delay-per-exec      0       # Busy-wait ticks between instructions (0 = none)
 ```
-
-### Hybrid Scheduler (Optional)
-
-Use `"rr/fcfs"` or `"fcfs/rr"` as the scheduler value to enable adaptive switching. Add one or both trigger keys:
-
-```
-hybrid-switch-after-finished  15    # Switch after N processes finish
-hybrid-switch-after-ticks     3000  # Switch after N CPU ticks
-```
-
-The emulator prints a message to the console when the switch occurs.
 
 ---
 
