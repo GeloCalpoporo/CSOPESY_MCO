@@ -105,16 +105,28 @@ std::shared_ptr<Process> Scheduler::findProcess(const std::string& name) {
 
 std::vector<std::shared_ptr<Process>> Scheduler::getAllProcesses() {
     std::lock_guard<std::mutex> lock(mtx);
-    // Per the spec mockup, screen -ls / report-util show only the processes
-    // CURRENTLY RUNNING on a core plus the FINISHED ones. Processes still waiting
-    // in the ready queue (or sleeping) are not "running" and are not listed.
     std::vector<std::shared_ptr<Process>> result;
-    for (const auto& c : cores)                     // running (on a core)
+
+    // On a core right now
+    for (const auto& c : cores)
         if (c.proc && !c.proc->isFinished)
             result.push_back(c.proc);
-    for (const auto& p : processes)                 // finished (in creation order)
+
+    // Waiting in the ready queue
+    for (const auto& p : readyQueue)
+        if (!p->isFinished)
+            result.push_back(p);
+
+    // Parked/sleeping (relinquished CPU but not done)
+    for (const auto& p : sleeping)
+        if (!p->isFinished)
+            result.push_back(p);
+
+    // Finished
+    for (const auto& p : processes)
         if (p->isFinished)
             result.push_back(p);
+
     return result;
 }
 
