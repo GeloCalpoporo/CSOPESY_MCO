@@ -8,7 +8,7 @@
 namespace {
     // Duration of one simulated CPU tick. Small enough to feel live, large
     // enough not to peg a core. Tune this if processes run too fast/slow.
-    constexpr std::chrono::milliseconds TICK_DURATION{50};
+    constexpr std::chrono::milliseconds TICK_DURATION{1};
 
     std::string nowTimestamp() {
         std::time_t now = std::time(nullptr);
