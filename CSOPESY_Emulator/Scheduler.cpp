@@ -8,7 +8,7 @@
 namespace {
     // Duration of one simulated CPU tick. Small enough to feel live, large
     // enough not to peg a core. Tune this if processes run too fast/slow.
-    constexpr std::chrono::milliseconds TICK_DURATION{2};
+    constexpr std::chrono::milliseconds TICK_DURATION{1};
 
     std::string nowTimestamp() {
         std::time_t now = std::time(nullptr);
@@ -105,13 +105,13 @@ std::shared_ptr<Process> Scheduler::findProcess(const std::string& name) {
 
 std::vector<std::shared_ptr<Process>> Scheduler::getAllProcesses() {
     std::lock_guard<std::mutex> lock(mtx);
-    // Per the spec mockup, screen -ls / report-util show only the processes
-    // CURRENTLY RUNNING on a core plus the FINISHED ones. Processes still waiting
-    // in the ready queue (or sleeping) are not "running" and are not listed.
     std::vector<std::shared_ptr<Process>> result;
-    for (const auto& c : cores)                     // running (on a core)
+    for (const auto& c : cores)                     // actively on a core
         if (c.proc && !c.proc->isFinished)
             result.push_back(c.proc);
+    for (const auto& p : sleeping)                  // temporarily sleeping (still "running")
+        if (!p->isFinished)
+            result.push_back(p);
     for (const auto& p : processes)                 // finished (in creation order)
         if (p->isFinished)
             result.push_back(p);
@@ -165,19 +165,7 @@ void Scheduler::schedulerLoop() {
                 }
             }
 
-            // (3) Assign ready processes to idle cores.
-            for (int i = 0; i < numCores; ++i) {
-                if (cores[i].proc || readyQueue.empty()) continue;
-                auto p = readyQueue.front();
-                readyQueue.pop_front();
-                if (p->isFinished) continue;
-                cores[i].proc        = p;
-                cores[i].quantumLeft = useRoundRobin ? static_cast<int>(config.quantum_cycles) : 0;
-                cores[i].delayLeft   = 0;
-                p->coreId            = i;
-            }
-
-            // (4) Run one tick on each busy core.
+            // (3) Run one tick on each busy core.
             for (int i = 0; i < numCores; ++i) {
                 Core& c = cores[i];
                 if (!c.proc) continue;
@@ -185,11 +173,15 @@ void Scheduler::schedulerLoop() {
 
                 if (p->isFinished) { c.proc = nullptr; continue; }
 
+                constexpr int BURST_SIZE = 20;  // tweak this number
+
                 // delay-per-exec: busy-wait on the core, do no work this tick.
                 if (c.delayLeft > 0) {
                     c.delayLeft--;
                 } else {
-                    p->executeNextInstruction();
+                    for (int b = 0; b < BURST_SIZE && !p->isFinished && !p->isSleeping(); b++) {
+                        p->executeNextInstruction();
+                    }
                     c.delayLeft = static_cast<int>(config.delay_per_exec);
                 }
 
@@ -209,6 +201,21 @@ void Scheduler::schedulerLoop() {
                     readyQueue.push_back(p);
                     c.proc = nullptr;
                 }
+            }
+
+            // (4) Assign ready processes to idle cores — runs AFTER executing ticks so
+            //     any core vacated this tick is immediately refilled before the next
+            //     snapshot. This ensures getCoresUsed() == numCores whenever the ready
+            //     queue is non-empty, giving 100% CPU utilization in the display.
+            for (int i = 0; i < numCores; ++i) {
+                if (cores[i].proc || readyQueue.empty()) continue;
+                auto p = readyQueue.front();
+                readyQueue.pop_front();
+                if (p->isFinished) continue;
+                cores[i].proc        = p;
+                cores[i].quantumLeft = useRoundRobin ? static_cast<int>(config.quantum_cycles) : 0;
+                cores[i].delayLeft   = 0;
+                p->coreId            = i;
             }
         } // mutex released here
 
