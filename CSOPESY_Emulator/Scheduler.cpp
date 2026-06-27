@@ -173,11 +173,15 @@ void Scheduler::schedulerLoop() {
 
                 if (p->isFinished) { c.proc = nullptr; continue; }
 
+                constexpr int BURST_SIZE = 20;  // tweak this number
+
                 // delay-per-exec: busy-wait on the core, do no work this tick.
                 if (c.delayLeft > 0) {
                     c.delayLeft--;
                 } else {
-                    p->executeNextInstruction();
+                    for (int b = 0; b < BURST_SIZE && !p->isFinished && !p->isSleeping(); b++) {
+                        p->executeNextInstruction();
+                    }
                     c.delayLeft = static_cast<int>(config.delay_per_exec);
                 }
 
