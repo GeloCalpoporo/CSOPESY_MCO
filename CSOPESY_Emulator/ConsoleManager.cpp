@@ -100,8 +100,11 @@ void ConsoleManager::loadConfig() {
 		std::cout << "Error: num-cpu must be between 1 and 128." << std::endl;
 		return;
 	}
-	if (config.scheduler != "rr" && config.scheduler != "fcfs") {
-		std::cout << "Error: scheduler must be \"rr\" or \"fcfs\"." << std::endl;
+	// Accept the standard spec values ("rr", "fcfs") plus the optional hybrid
+	// forms ("rr/fcfs", "fcfs/rr"). Plain values keep the exact spec behavior.
+	if (config.scheduler != "rr" && config.scheduler != "fcfs" &&
+		config.scheduler != "rr/fcfs" && config.scheduler != "fcfs/rr") {
+		std::cout << "Error: scheduler must be \"rr\", \"fcfs\", \"rr/fcfs\", or \"fcfs/rr\"." << std::endl;
 		return;
 	}
 	if (config.min_ins > config.max_ins) {
@@ -368,5 +371,3 @@ std::string ConsoleManager::getCurrentTimestamp() {
 	std::strftime(buf, sizeof(buf), "%m/%d/%Y %I:%M:%S%p", &tm_info);
 	return std::string(buf);
 }
-
-
