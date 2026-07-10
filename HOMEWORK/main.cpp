@@ -148,16 +148,6 @@ long externalFragmentationBytes() {
 
 // caller must hold mtx
 void writeSnapshot(long qq) {
-    // ensure output folder exists (created once)
-    static bool dirMade = false;
-    if (!dirMade) {
-#ifdef _WIN32
-        _mkdir("memory_stamps");
-#else
-        mkdir("memory_stamps", 0755);
-#endif
-        dirMade = true;
-    }
     ostringstream out;
     out << "Timestamp: (" << nowStamp() << ")\n";
     out << "Number of processes in memory: " << processesInMemory() << "\n";
@@ -178,7 +168,7 @@ void writeSnapshot(long qq) {
         }
         i = j;
     }
-    out << "----start----- = 0\n";
+    out << "----start---- = 0\n";
 
     ofstream f("memory_stamps/memory_stamp_" + to_string(qq) + ".txt");
     f << out.str();
@@ -314,22 +304,43 @@ void cmdInitialize() {
         cout << "config.txt not found in current directory.\n";
         return;
     }
+
+    // wipe old snapshots so re-running 'initialize' starts clean
+#ifdef _WIN32
+    system("rmdir /s /q memory_stamps 2>nul");
+    _mkdir("memory_stamps");
+#else
+    system("rm -rf memory_stamps");
+    mkdir("memory_stamps", 0755);
+#endif
+
     lock_guard<mutex> lock(mtx);
     numFrames = (int)(cfg.maxOverallMem / cfg.memPerFrame);
     framesPerProc = (int)(cfg.memPerProc / cfg.memPerFrame);
     memFrames.assign(numFrames, -1);
     coreProc.assign(cfg.numCpu, -1);
     coreQuantumLeft.assign(cfg.numCpu, 0);
+
+    // reset process/queue state so re-running 'initialize' doesn't desync
+    processes.clear();
+    readyQueue.clear();
+    finishedList.clear();
+    nextPid = 1;
+    cycleCount = 0;
+    schedulerRunning = false;
+
     initialized = true;
     cout << "Initialized. num-cpu=" << cfg.numCpu << " scheduler=" << cfg.scheduler
-         << " quantum-cycles=" << cfg.quantumCycles << " batch-process-freq=" << cfg.batchProcessFreq
-         << " min-ins=" << cfg.minIns << " max-ins=" << cfg.maxIns
-         << " max-overall-mem=" << cfg.maxOverallMem << " mem-per-frame=" << cfg.memPerFrame
-         << " mem-per-proc=" << cfg.memPerProc << "\n";
+        << " quantum-cycles=" << cfg.quantumCycles << " batch-process-freq=" << cfg.batchProcessFreq
+        << " min-ins=" << cfg.minIns << " max-ins=" << cfg.maxIns
+        << " max-overall-mem=" << cfg.maxOverallMem << " mem-per-frame=" << cfg.memPerFrame
+        << " mem-per-proc=" << cfg.memPerProc << "\n";
 }
 
 void cmdSchedulerStart() {
     if (!initialized) { cout << "Run 'initialize' first.\n"; return; }
+    lock_guard<mutex> lock(mtx);
+    cycleCount = 0;              // quantum/batch clock starts fresh
     schedulerRunning = true;
     cout << "Scheduler started.\n";
 }
@@ -342,36 +353,49 @@ void cmdSchedulerStop() {
 void cmdScreenLs() {
     lock_guard<mutex> lock(mtx);
     cout << "-------------------------------------------\n";
-    cout << "CPU utilization:\n";
+
+    cout << "CPU utilization:  ";
     int busy = 0;
     for (int c = 0; c < cfg.numCpu; c++) {
-        cout << "  Core " << c << ": ";
         if (coreProc[c] == -1) {
-            cout << "idle\n";
-        } else {
+            cout << "[Core " << c << ": idle]  ";
+        }
+        else {
             busy++;
             Process& p = processes[coreProc[c] - 1];
-            cout << p.name << " (pid " << p.pid << ") "
-                 << p.executed << "/" << p.totalIns << " ins, "
-                 << "quantum-left=" << coreQuantumLeft[c] << "\n";
+            cout << "[Core " << c << ": " << p.name << " " << p.executed << "/" << p.totalIns
+                << " q=" << coreQuantumLeft[c] << "]  ";
         }
     }
-    cout << "Cores busy: " << busy << "/" << cfg.numCpu << "\n\n";
+    cout << " (" << busy << "/" << cfg.numCpu << " busy)\n\n";
+
+    cout << "Legend: [M] = in memory (resident)   [-] = waiting for memory\n\n";
 
     cout << "Ready queue (" << readyQueue.size() << "):\n";
-    for (int pid : readyQueue) {
-        Process& p = processes[pid - 1];
-        cout << "  " << p.name << " (pid " << p.pid << ") "
-             << p.executed << "/" << p.totalIns
-             << (p.hasMemory ? " [has memory]" : " [waiting for memory]") << "\n";
+    {
+        vector<string> entries;
+        for (int pid : readyQueue) {
+            Process& p = processes[pid - 1];
+            ostringstream e;
+            e << "p" << left << setw(3) << pid
+                << "(" << right << setw(3) << p.executed << "/" << left << setw(3) << p.totalIns << ")"
+                << (p.hasMemory ? "[M]" : "[-]");
+            entries.push_back(e.str());
+        }
+        const int cols = 3;
+        const int colWidth = 24;
+        for (size_t i = 0; i < entries.size(); i += cols) {
+            for (size_t c = 0; c < cols && i + c < entries.size(); c++) {
+                cout << left << setw(colWidth) << entries[i + c];
+            }
+            cout << "\n";
+        }
     }
-    cout << "\nFinished processes (" << finishedList.size() << "):\n";
-    for (int pid : finishedList) {
-        Process& p = processes[pid - 1];
-        cout << "  " << p.name << " (pid " << p.pid << ") finished at " << p.finishedAt << "\n";
-    }
-    cout << "\nProcesses currently in memory: " << processesInMemory()
-         << " | External fragmentation: " << externalFragmentationBytes() << " bytes\n";
+
+    cout << "\nFinished (" << finishedList.size() << "): ";
+    for (int pid : finishedList) cout << processes[pid - 1].name << " ";
+    cout << "\n\nIn memory: " << processesInMemory()
+        << " | External fragmentation: " << externalFragmentationBytes() << " bytes\n";
     cout << "-------------------------------------------\n";
 }
 

@@ -13,3 +13,9 @@ set(CMAKE_GENERATOR_PLATFORM x64)
 # 4. Build the executable
 add_executable(HOMEWORK
         main.cpp)
+
+# 5. Copy config.txt next to the built executable every build
+add_custom_command(TARGET HOMEWORK POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${CMAKE_SOURCE_DIR}/config.txt
+                $<TARGET_FILE_DIR:HOMEWORK>)
