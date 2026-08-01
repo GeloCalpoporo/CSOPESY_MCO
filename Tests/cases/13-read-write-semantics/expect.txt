@@ -1,0 +1,6 @@
++ uninit=0
++ roundtrip=999
++ clamped=65535
+# All three addresses are inside a 1024-byte process, so nothing may be killed.
+- shut down due to memory access violation
++ Finished!

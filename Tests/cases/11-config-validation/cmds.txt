@@ -1,0 +1,5 @@
+# A bad config must be rejected, and nothing must run afterwards.
+initialize
+vmstat
+screen -s anything 256
+exit

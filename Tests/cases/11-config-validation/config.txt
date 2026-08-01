@@ -1,0 +1,14 @@
+# max-overall-mem is 1000, which is NOT a power of 2. The spec requires all
+# four memory parameters to be powers of 2 in [2^6, 2^16], so initialize must
+# refuse rather than start with a broken frame table.
+num-cpu 4
+scheduler "rr"
+quantum-cycles 5
+batch-process-freq 1
+min-ins 100
+max-ins 200
+delay-per-exec 0
+max-overall-mem 1000
+mem-per-frame 256
+min-mem-per-proc 256
+max-mem-per-proc 4096

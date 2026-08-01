@@ -1,0 +1,10 @@
+# Exactly four rejections - one per illegal size, and no others.
+N 4 invalid memory allocation
+# The two legal boundary sizes really were created.
++ okmin
++ okmax
+# None of the rejected ones leaked into the process list.
+- bad100
+- bad32
+- bad131072
+- badword

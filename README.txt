@@ -51,13 +51,17 @@ COMMANDS - MAIN MENU
 --------------------
   initialize                 Load config.txt and start the scheduler.
                              MUST be run first; only "exit" works before it.
-  screen -s <name> <mem>     Create a process with <mem> bytes and attach to it.
-  screen -c <name> <mem> "<instructions>"
+  screen -s <name> [<mem>]   Create a process with <mem> bytes and attach to it.
+                             <mem> is optional; without it the process gets
+                             max-mem-per-proc from config.txt.
+  screen -c <name> [<mem>] "<instructions>"
                              Create a process running a user-supplied program.
                              1-50 instructions, separated by semicolons.
+                             <mem> is optional here too, same fallback.
   screen -r <name>           Re-attach to a running process.
   screen -ls                 List running and finished processes, CPU utilization.
   scheduler-start            Start generating dummy processes.
+  scheduler-test             Accepted as an alias of scheduler-start.
   scheduler-stop             Stop generating dummy processes.
   report-util                Print the process table and save it to csopesy-log.txt.
   process-smi                Memory summary: used/total memory and per-process usage.
@@ -69,6 +73,22 @@ COMMANDS - INSIDE A PROCESS SCREEN
 ----------------------------------
   process-smi                Process info, memory, page faults, and PRINT logs.
   exit                       Return to the main menu (the process keeps running).
+
+  Any other main-menu command (screen -ls, vmstat, scheduler-start, ...) also
+  works from inside a process screen and behaves exactly as it would outside,
+  so you never have to exit a screen just to type a command.
+
+
+TESTING
+-------
+  Tests/run-tests.sh builds the emulator and drives it through 18 black-box
+  test cases, checking what the terminal actually printed. Run it from the
+  Tests folder with Git Bash or CLion's terminal:
+
+      cd Tests && ./run-tests.sh
+
+  Tests/README.md lists what each case proves and maps it to the requirement
+  it covers. Transcripts are written to Tests/out/<case>/transcript.txt.
 
 
 PROCESS INSTRUCTIONS

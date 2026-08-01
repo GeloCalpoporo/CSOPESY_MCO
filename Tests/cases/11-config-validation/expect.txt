@@ -1,0 +1,5 @@
+# The offending parameter is named, so the grader can fix it in seconds.
++ Error: max-overall-mem must be a power of 2 between 64 and 65536 bytes.
+- Initialized successfully
+# Every other command stays locked until a valid config is loaded.
+N 2 Error: Please run 'initialize' first.

@@ -1,0 +1,15 @@
+# The memory-pressure configuration. 1024 bytes of RAM in 16 frames of 64,
+# with processes wanting up to 256 bytes each, guarantees the frame table fills
+# and the replacement algorithm has to start evicting. This is the config to
+# use when recording the demand-paging video.
+num-cpu 4
+scheduler "rr"
+quantum-cycles 5
+batch-process-freq 1
+min-ins 100
+max-ins 200
+delay-per-exec 0
+max-overall-mem 1024
+mem-per-frame 64
+min-mem-per-proc 128
+max-mem-per-proc 256

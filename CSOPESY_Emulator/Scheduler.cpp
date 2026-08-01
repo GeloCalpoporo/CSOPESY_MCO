@@ -44,6 +44,11 @@ void Scheduler::initialize(const Config& cfg) {
         if (numCores > 128) numCores = 128;
         useRoundRobin = (cfg.scheduler == "rr");
 
+        // A round-robin quantum of 0 would preempt before any instruction could run.
+        // Configs in the wild do set quantum-cycles 0 when they mean "FCFS, quantum
+        // irrelevant", so treat it as the smallest slice that makes progress.
+        if (useRoundRobin && config.quantum_cycles < 1) config.quantum_cycles = 1;
+
         if (cores.empty())
             cores.resize(numCores);
 
@@ -175,11 +180,17 @@ std::vector<std::shared_ptr<Process>> Scheduler::getAllProcesses() {
 }
 
 // ----- reporting getters -----
+// A core counts as used only if its process is actually getting work done. A core
+// holding a process that cannot retire an instruction because memory is exhausted is
+// not doing useful work, and reporting it as busy would hide exactly the condition
+// these statistics exist to expose: with fewer frames than running processes need,
+// utilization must fall below 100%. A delay-per-exec busy-wait still counts as used -
+// there the core is deliberately held by the spec's own timing scheme.
 int Scheduler::getCoresUsed() const {
     std::lock_guard<std::mutex> lock(mtx);
     int used = 0;
     for (const auto& c : cores)
-        if (c.proc) used++;
+        if (c.proc && !c.proc->stalledOnMemory) used++;
     return used;
 }
 
@@ -199,6 +210,9 @@ void Scheduler::schedulerLoop() {
     auto nextTick = std::chrono::steady_clock::now();
 
     while (threadRunning) {
+        // Stamp the tick before any core runs: frames paged in during this tick are
+        // protected from eviction until the next one.
+        mem.setTick(cpuTicks);
         {
             std::lock_guard<std::mutex> lock(mtx);
 
@@ -240,7 +254,11 @@ void Scheduler::schedulerLoop() {
                 } else {
                     p->executeNextInstruction();         // exactly one instruction per tick
                     c.delayLeft = static_cast<int>(config.delay_per_exec);
-                    activeTicks++;
+                    // A tick that retired nothing because memory was exhausted is not
+                    // work: vmstat counts it as idle, so idle+active still tells the
+                    // truth about how much the CPU actually accomplished.
+                    if (p->stalledOnMemory) idleTicks++;
+                    else                    activeTicks++;
                 }
 
                 // RR time slice counts every tick the process holds the core.

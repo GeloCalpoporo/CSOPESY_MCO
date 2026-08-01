@@ -1,0 +1,8 @@
+# The other scheduler, selected by config.txt alone - no recompiling.
+initialize
+scheduler-start
+@sleep 4
+scheduler-stop
+screen -ls
+vmstat
+exit

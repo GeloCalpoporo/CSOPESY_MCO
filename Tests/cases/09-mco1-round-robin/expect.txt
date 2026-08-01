@@ -1,0 +1,16 @@
++ rr on 4 core(s)
++ Scheduler started. Generating processes...
++ Scheduler stopped.
+# The MCO1 table, with both sections.
++ Running Processes:
++ Finished Processes:
+~ Cores Used: [0-9]+
+# Processes really ran to completion, e.g. "Finished    34 / 34".
+~ Finished +[0-9]+ / [0-9]+
+# Processes really were dispatched to cores.
+~ Core [0-9]+:
+# The table is printed three times: screen -ls, report-util's echo, and the file
+# it wrote. That third one proves csopesy-log.txt has real content.
+N 3 CPU Utilization:
++ Report generated at csopesy-log.txt
++ ===== FILE csopesy-log.txt =====

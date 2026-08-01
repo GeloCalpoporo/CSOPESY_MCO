@@ -1,0 +1,9 @@
+# Paging is genuinely happening ...
+~ [1-9][0-9]* num paged in
+~ [1-9][0-9]* num paged out
+# ... and processes still finish. This is the anti-livelock check.
+~ Finished +[0-9]+ / [0-9]+
+~ [1-9][0-9]* inactive processes
+# Memory freed by finished processes is returned to the pool, so the machine is
+# not permanently pinned at 100% the way case 08 is.
+- shut down due to memory access violation

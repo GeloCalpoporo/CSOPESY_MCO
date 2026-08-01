@@ -1,0 +1,13 @@
+# Deliberately tiny and exact, so vmstat's numbers can be asserted literally
+# instead of "some number appeared".  1024 / 64 = 16 frames.
+num-cpu 4
+scheduler "rr"
+quantum-cycles 5
+batch-process-freq 1
+min-ins 100
+max-ins 200
+delay-per-exec 0
+max-overall-mem 1024
+mem-per-frame 64
+min-mem-per-proc 128
+max-mem-per-proc 256

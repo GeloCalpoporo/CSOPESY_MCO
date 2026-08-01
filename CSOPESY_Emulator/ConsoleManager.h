@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <ostream>
+#include <vector>
 #include "Config.h"
 #include "Process.h"
 #include "Scheduler.h"
@@ -50,8 +51,8 @@ private:
 	void displayVmstat();        // vmstat: fine-grained memory and tick counters
 
 	// MCO2 screen sub-commands
-	void handleScreenCreate(const std::string& args);   // screen -s <name> <mem>
-	void handleScreenCustom(const std::string& args);   // screen -c <name> <mem> "<instrs>"
+	void handleScreenCreate(const std::string& args);   // screen -s <name> [<mem>]
+	void handleScreenCustom(const std::string& args);   // screen -c <name> [<mem>] "<instrs>"
 	void handleScreenResume(const std::string& name);   // screen -r <name>
 	bool validMemorySize(std::size_t bytes) const;      // power of 2 within [2^6, 2^16]
 

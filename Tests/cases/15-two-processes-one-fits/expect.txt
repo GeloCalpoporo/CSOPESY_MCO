@@ -1,0 +1,13 @@
+# Both processes exist and are running - the second was not turned away.
++ p1
++ p2
+# Memory is completely committed.
++ 512 bytes used memory
++ 0 bytes free memory
+# ... and the two of them are swapping heavily through the backing store.
+~ [1-9][0-9]* num paged in
+~ [1-9][0-9]* num paged out
++ CSOPESY BACKING STORE
+- (no pages currently in the backing store)
+# A quantum of 0 under FCFS must not stall or crash anything.
+- invalid

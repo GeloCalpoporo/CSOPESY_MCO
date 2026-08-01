@@ -1,0 +1,5 @@
++ finished cleanly
+N 1 Process donezo not found.
+N 1 Process nosuchprocess not found.
+# A clean exit must never be reported as a memory error.
+- shut down due to memory access violation

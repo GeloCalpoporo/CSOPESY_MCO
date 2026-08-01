@@ -1,0 +1,10 @@
+# MCO2 spec section 5, the three rules about values:
+#   - reading a block that was never written yields 0
+#   - a written value reads back unchanged
+#   - values are uint16 and are clamped to [0, 65535]
+initialize
+screen -c memrules 1024 "READ z 0x300; PRINT(\"uninit=\" + z); WRITE 0x200 999; READ y 0x200; PRINT(\"roundtrip=\" + y); WRITE 0x210 70000; READ w 0x210; PRINT(\"clamped=\" + w)"
+@sleep 1
+process-smi
+exit
+exit

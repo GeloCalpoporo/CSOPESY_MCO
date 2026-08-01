@@ -41,6 +41,13 @@ public:
     Access ensureResident(int pid, std::size_t addr, bool pin);
     void   unpinProcess(int pid);
 
+    // The scheduler stamps the current CPU tick before running the cores. A frame
+    // loaded on tick N is not a replacement candidate until tick N+1, so a core can
+    // never evict a page another core faulted in during the same tick. Without this,
+    // 16 cores sharing 1 frame would each "succeed" every tick by stealing the frame
+    // from the core before them, reporting 100% CPU use while achieving nothing.
+    void   setTick(unsigned long long tick);
+
     // Require residency (guaranteed by ensureResident) - reads/writes are little-endian
     // and may straddle a page boundary, so both bytes are translated separately.
     std::uint16_t readU16(int pid, std::size_t addr) const;
@@ -63,9 +70,10 @@ public:
 
 private:
     struct Frame {
-        int         pid    = -1;      // -1 = free
-        std::size_t vpage  = 0;
-        bool        pinned = false;
+        int                pid        = -1;      // -1 = free
+        std::size_t        vpage      = 0;
+        bool               pinned     = false;
+        unsigned long long loadedTick = 0;       // tick this page was paged in on
     };
 
     struct PageTable {
@@ -93,6 +101,8 @@ private:
 
     std::size_t memPerFrame = 0;
     std::size_t maxMem      = 0;
+
+    unsigned long long currentTick = 0;   // set by the scheduler once per tick
 
     unsigned long long numPagedIn  = 0;
     unsigned long long numPagedOut = 0;

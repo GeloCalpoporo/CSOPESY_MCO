@@ -1,0 +1,9 @@
+# Uses "scheduler-test", the older name for scheduler-start, on purpose.
+initialize
+scheduler-test
+@sleep 5
+process-smi
+screen -ls
+vmstat
+scheduler-stop
+exit

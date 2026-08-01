@@ -1,0 +1,11 @@
+# Two hand-made processes on a machine that can only hold one of them.
+# Both must still run - the second is not rejected, it swaps.
+# Note quantum-cycles is 0 here: FCFS ignores it, and it must not break anything.
+initialize
+screen -s p1 512
+screen -s p2 512
+@sleep 5
+screen -ls
+process-smi
+vmstat
+exit

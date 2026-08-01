@@ -1,0 +1,12 @@
+# The case that proves the demand pager is not merely busy, but correct:
+# processes must page in, page out, AND still run to completion. A pager that
+# livelocked - evicting the very page the faulting process just brought in -
+# would show plenty of paging here and zero finished processes.
+initialize
+scheduler-start
+@sleep 5
+scheduler-stop
+@sleep 2
+screen -ls
+vmstat
+exit

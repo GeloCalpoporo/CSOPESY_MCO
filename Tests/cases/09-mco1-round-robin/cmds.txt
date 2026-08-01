@@ -1,0 +1,9 @@
+# MCO2 must not regress MCO1. Round robin scheduling, screen -ls, and
+# report-util writing the same table to csopesy-log.txt.
+initialize
+scheduler-start
+@sleep 4
+scheduler-stop
+screen -ls
+report-util
+exit

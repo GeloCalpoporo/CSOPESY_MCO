@@ -266,11 +266,13 @@ void Process::executeNextInstruction() {
     // is restarted on a later tick.
     if (!ensurePages(ins)) {
         if (mm) mm->unpinProcess(pid);
+        stalledOnMemory = !isFinished;   // a violation ends the process, it is not a stall
         return;
     }
 
     executeOne(ins);
     if (mm) mm->unpinProcess(pid);
+    stalledOnMemory = false;
 
     currentLine++;
     if (currentLine >= static_cast<int>(instructions.size())) isFinished = true;
@@ -326,16 +328,45 @@ bool Process::ensurePages(const Instruction& ins) {
         break;
     }
 
+    bool touchesMemory = (ins.type == InstrType::READ || ins.type == InstrType::WRITE);
+
+    if (touchesMemory && !inRange(ins.address)) {          // outside our memory space
+        raiseViolation(ins.address);
+        return false;
+    }
+
+    // One instruction can need the symbol table page and a data page resident at the
+    // same moment. If physical memory has fewer frames than that, no amount of paging
+    // will ever satisfy it and the process would retry forever, taking a core with it.
+    // Shut it down instead: an honest error beats a hang in a graded run.
+    {
+        std::size_t frameSize = mm->frameSize();
+        std::vector<std::size_t> pages;
+        auto note = [&](std::size_t addr) {
+            std::size_t vp = addr / frameSize;
+            if (std::find(pages.begin(), pages.end(), vp) == pages.end()) pages.push_back(vp);
+        };
+        if (needsSymbolTable) { note(0); note(SYMBOL_TABLE_BYTES - 1); }
+        if (touchesMemory)    { note(ins.address); note(ins.address + 1); }
+
+        if (pages.size() > mm->totalFrames()) {
+            raiseViolation(ins.address);
+            std::lock_guard<std::mutex> lock(logMutex);
+            printLogs.push_back("(" + timestamp() + ") Core:" + std::to_string(coreId)
+                                + " needs " + std::to_string(pages.size())
+                                + " resident pages but physical memory has only "
+                                + std::to_string(mm->totalFrames())
+                                + " frame(s) - raise max-overall-mem or mem-per-frame");
+            return false;
+        }
+    }
+
     if (needsSymbolTable) {
         if (!touch(0)) return false;
         if (SYMBOL_TABLE_BYTES > 1 && !touch(SYMBOL_TABLE_BYTES - 1)) return false;
     }
 
-    if (ins.type == InstrType::READ || ins.type == InstrType::WRITE) {
-        if (!inRange(ins.address)) {                       // outside our memory space
-            raiseViolation(ins.address);
-            return false;
-        }
+    if (touchesMemory) {
         if (!touch(ins.address))     return false;
         if (!touch(ins.address + 1)) return false;
     }

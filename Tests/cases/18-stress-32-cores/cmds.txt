@@ -1,0 +1,38 @@
+# Sustained heavy load, sampled the way a grader would sample it: process-smi
+# and vmstat every couple of seconds for 20 seconds. What matters is that the
+# counters keep moving and processes keep finishing - no deadlock, no freeze.
+initialize
+scheduler-start
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+@sleep 2
+process-smi
+vmstat
+scheduler-stop
+screen -ls
+exit

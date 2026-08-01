@@ -81,10 +81,13 @@ void MemoryManager::releaseProcess(int pid) {
 long long MemoryManager::takeVictimFrame() {
     // FIFO: oldest loaded frame first, skipping frames pinned by the instruction
     // currently being serviced (prevents a process from evicting the very page it
-    // just faulted in while collecting the rest of its operands).
+    // just faulted in while collecting the rest of its operands), and skipping
+    // frames loaded on this same tick (prevents one core from undoing the page-in
+    // another core just paid for, which would look like progress but is not).
     for (auto it = fifo.begin(); it != fifo.end(); ++it) {
         std::size_t fi = *it;
         if (frames[fi].pid < 0 || frames[fi].pinned) continue;
+        if (frames[fi].loadedTick == currentTick)    continue;
 
         Frame& victim = frames[fi];
 
@@ -146,13 +149,19 @@ MemoryManager::Access MemoryManager::ensureResident(int pid, std::size_t addr, b
     }
     ++numPagedIn;
 
-    frames[fi].pid    = pid;
-    frames[fi].vpage  = vpage;
-    frames[fi].pinned = pin;
-    pt.frameOf[vpage] = frameIdx;
+    frames[fi].pid        = pid;
+    frames[fi].vpage      = vpage;
+    frames[fi].pinned     = pin;
+    frames[fi].loadedTick = currentTick;
+    pt.frameOf[vpage]     = frameIdx;
     fifo.push_back(fi);
 
     return Access::FAULT_SERVICED;
+}
+
+void MemoryManager::setTick(unsigned long long tick) {
+    std::lock_guard<std::mutex> lock(mtx);
+    currentTick = tick;
 }
 
 void MemoryManager::unpinProcess(int pid) {

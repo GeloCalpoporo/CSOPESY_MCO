@@ -1,0 +1,16 @@
+# Pages really were faulted in on demand ...
+~ [1-9][0-9]* num paged in
+# ... and the frame table really did fill up, forcing eviction to disk.
+~ [1-9][0-9]* num paged out
+# Memory is fully committed under pressure: 16 frames of 64 bytes, all in use.
++ 1024 bytes used memory
++ 0 bytes free memory
++ Memory Util: 100%
+# The backing store is a readable text file, as the spec requires, and it is
+# current at the moment process-smi was shown.
++ ===== FILE csopesy-backing-store.txt =====
++ CSOPESY BACKING STORE
++ Frame size      : 64 bytes
++ Total frames    : 16
+~ Pages swapped   : [1-9][0-9]*
+- (no pages currently in the backing store)

@@ -1,0 +1,9 @@
+# MCO2 spec section 5: the symbol table segment is fixed at 64 bytes.
+# A uint16 costs 2 bytes, so exactly 32 variables fit. Declarations past
+# the 32nd are silently IGNORED - the spec says ignored, not an error.
+initialize
+screen -c symtab 256 "DECLARE v1 1; DECLARE v2 2; DECLARE v3 3; DECLARE v4 4; DECLARE v5 5; DECLARE v6 6; DECLARE v7 7; DECLARE v8 8; DECLARE v9 9; DECLARE v10 10; DECLARE v11 11; DECLARE v12 12; DECLARE v13 13; DECLARE v14 14; DECLARE v15 15; DECLARE v16 16; DECLARE v17 17; DECLARE v18 18; DECLARE v19 19; DECLARE v20 20; DECLARE v21 21; DECLARE v22 22; DECLARE v23 23; DECLARE v24 24; DECLARE v25 25; DECLARE v26 26; DECLARE v27 27; DECLARE v28 28; DECLARE v29 29; DECLARE v30 30; DECLARE v31 31; DECLARE v32 32; DECLARE v33 33; PRINT(\"v1=\" + v1); PRINT(\"v32=\" + v32); PRINT(\"v33=\" + v33)"
+@sleep 1
+process-smi
+exit
+exit

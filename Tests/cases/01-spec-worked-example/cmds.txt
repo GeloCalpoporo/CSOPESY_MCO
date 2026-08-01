@@ -1,0 +1,9 @@
+# MCO2 spec p.5, section 6 - the example printed in the handout itself.
+# DECLARE varA 10; DECLARE varB 5; ADD -> 15; WRITE it to 0x500; READ it back; PRINT.
+initialize
+screen -c process2 2048 "DECLARE varA 10; DECLARE varB 5; ADD varA varA varB; WRITE 0x500 varA; READ varC 0x500; PRINT(\"Result: \" + varC)"
+@sleep 1
+process-smi
+exit
+screen -ls
+exit

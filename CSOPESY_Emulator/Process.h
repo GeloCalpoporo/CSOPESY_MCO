@@ -80,6 +80,10 @@ public:
     // MCO2 state
     std::size_t        memoryBytes  = 0;
     unsigned long long pageFaults   = 0;
+    // True when the last tick could not retire an instruction because a page it
+    // needed was not resident and no frame could be spared. The scheduler reads this
+    // so CPU utilization reports work actually done, not merely cores occupied.
+    bool               stalledOnMemory = false;
     bool               violated     = false;   // killed by an access violation
     std::string        violationTime;          // "HH:MM:SS"
     std::string        violationAddress;       // "0x500"

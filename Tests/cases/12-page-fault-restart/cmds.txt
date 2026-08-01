@@ -1,0 +1,13 @@
+# MCO2 spec section 8 - the case the handout walks through on page 6.
+# This is the same program as case 01, but with less physical memory than the
+# process needs, so the WRITE to 0x500 must page-fault, evict a victim frame,
+# bring 0x500 in, and RESTART the instruction. If the faulting instruction were
+# wrongly skipped or wrongly counted as executed, the answer would not be 15.
+initialize
+screen -c process2 2048 "DECLARE varA 10; DECLARE varB 5; ADD varA varA varB; WRITE 0x500 varA; READ varC 0x500; PRINT(\"Result: \" + varC)"
+@sleep 2
+process-smi
+exit
+screen -ls
+vmstat
+exit

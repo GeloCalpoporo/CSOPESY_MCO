@@ -1,0 +1,13 @@
+# MCO1 regression config: plenty of memory so nothing pages, short programs so
+# processes actually reach "Finished" inside the test window.
+num-cpu 4
+scheduler "rr"
+quantum-cycles 5
+batch-process-freq 1
+min-ins 20
+max-ins 40
+delay-per-exec 0
+max-overall-mem 16384
+mem-per-frame 256
+min-mem-per-proc 256
+max-mem-per-proc 1024

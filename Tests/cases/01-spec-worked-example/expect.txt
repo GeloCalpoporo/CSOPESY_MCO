@@ -1,0 +1,7 @@
+# The whole point of the case: the value survives a WRITE to memory and a READ back.
++ Result: 15
+# 6 instructions, all executed, process ended normally (not by a violation).
++ Lines of code:            6
++ Finished!
+- access violation
+~ Finished +6 / 6

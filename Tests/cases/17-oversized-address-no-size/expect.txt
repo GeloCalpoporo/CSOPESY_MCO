@@ -1,0 +1,9 @@
+# The command is accepted without a memory size.
++ No memory size given; using max-mem-per-proc = 256 bytes.
+- invalid command
+- invalid memory allocation
+# 0x500 is outside a 256-byte process, so the spec's violation applies.
+~ Process faulty_process shut down due to memory access violation error that occurred at [0-9][0-9]:[0-9][0-9]:[0-9][0-9]\. 0x500 invalid\.
+~ Violation +[0-9]+ / 7
+# A single-frame configuration is flagged up front rather than silently misbehaving.
++ Warning   : only 1 frame exists.

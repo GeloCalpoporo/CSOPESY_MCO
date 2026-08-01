@@ -1,0 +1,16 @@
+# 8 frames of 64 bytes on 2 cores, with a process arriving every 20 ticks.
+# Tuned so that memory genuinely runs out - frames must be evicted to the
+# backing store - while the load stays light enough that processes still finish.
+# Case 08 shows what thrashing looks like; this one shows paging doing useful
+# work, and it is the better of the two to record for the memory video.
+num-cpu 2
+scheduler "rr"
+quantum-cycles 5
+batch-process-freq 20
+min-ins 20
+max-ins 40
+delay-per-exec 0
+max-overall-mem 512
+mem-per-frame 64
+min-mem-per-proc 128
+max-mem-per-proc 256
