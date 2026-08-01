@@ -4,6 +4,38 @@
 #include <sstream>
 #include <iomanip>
 #include <ctime>
+#include <vector>
+
+namespace {
+    std::string trimStr(const std::string& s) {
+        std::size_t a = s.find_first_not_of(" \t\r\n");
+        if (a == std::string::npos) return "";
+        std::size_t b = s.find_last_not_of(" \t\r\n");
+        return s.substr(a, b - a + 1);
+    }
+
+    bool isPowerOfTwo(std::size_t v) {
+        return v != 0 && (v & (v - 1)) == 0;
+    }
+
+    // config.txt memory parameters must all be powers of 2 in [2^6, 2^16].
+    bool validMemParam(std::size_t v) {
+        return isPowerOfTwo(v) && v >= 64 && v <= 65536;
+    }
+
+    // Where "initialize" looks for config.txt. The working directory depends on how the
+    // program was launched - CLion and Visual Studio run the exe from their build folder,
+    // the command line usually runs it from the project root - so try the layouts that
+    // actually occur instead of failing with "could not open config.txt".
+    const char* CONFIG_CANDIDATES[] = {
+        "config.txt",                          // cwd (exe folder: CMake copies it there)
+        "CSOPESY_Emulator/config.txt",         // cwd = project root
+        "../CSOPESY_Emulator/config.txt",      // cwd = cmake-build-debug/
+        "../config.txt",
+        "../../CSOPESY_Emulator/config.txt",   // cwd = build/Debug/
+        "../../config.txt",
+    };
+}
 
 // ----- CONSTRUCTOR -----
 ConsoleManager::ConsoleManager() {
@@ -27,12 +59,12 @@ void ConsoleManager::run() {
 			std::cout << "\n[" << attachedProcess->name << "]:\\>";
 		}
 
-		std::getline(std::cin, input);
+		if (!std::getline(std::cin, input)) break;
 
 		if (currentState == State::MAIN_MENU)
-			handleMainMenuCommand(input);
+			handleMainMenuCommand(trimStr(input));
 		else
-			handleProcessScreenCommand(input);
+			handleProcessScreenCommand(trimStr(input));
 	}
 }
 
@@ -49,9 +81,9 @@ void ConsoleManager::displayHeader() {
 	std::cout << "|     |_  _____| ||       ||   |    |   |___  _____| |  |   |  " << std::endl;
 	std::cout << "|_______||_______||_______||___|    |_______||_______|  |___|  " << std::endl;
 	std::cout << "------------------------------------------------------------" << std::endl;
-	std::cout << "Welcome to CSOPESY Emulator!" << std::endl;
+	std::cout << "Welcome to CSOPESY Emulator! (MCO2 - Multitasking OS)" << std::endl;
 	std::cout << "Developers: Alviar, Kelvin | Calpoporo, Angelo | Carlos, Miguel | Tujan, Nio" << std::endl;
-	std::cout << "Last updated: 06-25-2026" << std::endl;
+	std::cout << "Last updated: 08-01-2026" << std::endl;
 	std::cout << "------------------------------------------------------------" << std::endl;
 }
 
@@ -71,9 +103,17 @@ void ConsoleManager::clearScreen() {
 void ConsoleManager::loadConfig() {
 	initialized = false;
 
-	std::ifstream file("config.txt");
+	std::ifstream file;
+	std::string   configPath;
+	for (const char* candidate : CONFIG_CANDIDATES) {
+		file.open(candidate);
+		if (file.is_open()) { configPath = candidate; break; }
+		file.clear();
+	}
 	if (!file.is_open()) {
-		std::cout << "Error: Could not open config.txt" << std::endl;
+		std::cout << "Error: Could not open config.txt. Looked in:" << std::endl;
+		for (const char* candidate : CONFIG_CANDIDATES)
+			std::cout << "  " << candidate << std::endl;
 		return;
 	}
 
@@ -91,11 +131,16 @@ void ConsoleManager::loadConfig() {
 		else if (key == "min-ins")             file >> config.min_ins;
 		else if (key == "max-ins")             file >> config.max_ins;
 		else if (key == "delay-per-exec")      file >> config.delay_per_exec;
+		// ----- MCO2 memory parameters -----
+		else if (key == "max-overall-mem")     file >> config.max_overall_mem;
+		else if (key == "mem-per-frame")       file >> config.mem_per_frame;
+		else if (key == "min-mem-per-proc")    file >> config.min_mem_per_proc;
+		else if (key == "max-mem-per-proc")    file >> config.max_mem_per_proc;
 	}
 
 	file.close();
 
-	// Validate ranges 
+	// Validate ranges
 	if (config.num_cpu < 1 || config.num_cpu > 128) {
 		std::cout << "Error: num-cpu must be between 1 and 128." << std::endl;
 		return;
@@ -109,9 +154,39 @@ void ConsoleManager::loadConfig() {
 		return;
 	}
 
+	// MCO2: all four memory parameters are powers of 2 within [2^6, 2^16]
+	struct { const char* name; std::size_t value; } memParams[] = {
+		{ "max-overall-mem",  config.max_overall_mem  },
+		{ "mem-per-frame",    config.mem_per_frame    },
+		{ "min-mem-per-proc", config.min_mem_per_proc },
+		{ "max-mem-per-proc", config.max_mem_per_proc },
+	};
+	for (const auto& p : memParams) {
+		if (!validMemParam(p.value)) {
+			std::cout << "Error: " << p.name
+			          << " must be a power of 2 between 64 and 65536 bytes." << std::endl;
+			return;
+		}
+	}
+	if (config.mem_per_frame > config.max_overall_mem) {
+		std::cout << "Error: mem-per-frame cannot exceed max-overall-mem." << std::endl;
+		return;
+	}
+	if (config.min_mem_per_proc > config.max_mem_per_proc) {
+		std::cout << "Error: min-mem-per-proc cannot be greater than max-mem-per-proc." << std::endl;
+		return;
+	}
+
 	initialized = true;
 	scheduler->initialize(config);
-	std::cout << "Initialized successfully." << std::endl;
+
+	std::size_t frames = config.max_overall_mem / config.mem_per_frame;
+	std::cout << "Initialized successfully. (config: " << configPath << ")" << std::endl;
+	std::cout << "  Scheduler : " << config.scheduler
+	          << " on " << config.num_cpu << " core(s)" << std::endl;
+	std::cout << "  Memory    : " << config.max_overall_mem << " bytes / "
+	          << config.mem_per_frame << " bytes per frame = "
+	          << frames << " frame(s)" << std::endl;
 }
 
 
@@ -147,15 +222,15 @@ void ConsoleManager::handleMainMenuCommand(const std::string& input) {
 
 	if (input.rfind("screen", 0) == 0) {
 		//Everythinh after "screen" (trim leading space)
-		std::string args = (input.size() > 6) ? input.substr(7) : "";
-		handleScreenCommand(args);	
+		std::string args = (input.size() > 6) ? trimStr(input.substr(6)) : "";
+		handleScreenCommand(args);
 	}
 	else if (input == "scheduler-start")
 	{
 		scheduler->startGeneration();
 		std::cout << "Scheduler started. Generating processes..." << std::endl;
 	}
-	else if (input == "scheduler-stop") 
+	else if (input == "scheduler-stop")
 	{
 		scheduler->stopGeneration();
 		std::cout << "Scheduler stopped." << std::endl;
@@ -164,74 +239,175 @@ void ConsoleManager::handleMainMenuCommand(const std::string& input) {
 	{
 		handleReportUtil();
 	}
+	else if (input == "process-smi")
+	{
+		displaySystemSMI();
+	}
+	else if (input == "vmstat")
+	{
+		displayVmstat();
+	}
 	else {
 		std::cout << "Unknown Command: '" << input << "'" << std::endl;
 	}
 }
 
 //
-// Handle "screen" subcommands: -s <name>, -r <name>, -ls
+// Handle "screen" subcommands: -s <name> <mem>, -c <name> <mem> "<instrs>", -r <name>, -ls
 //
 
 void ConsoleManager::handleScreenCommand(const std::string& args) {
+	static const char* usage =
+		"Usage: screen -s <name> <memory> | screen -c <name> <memory> \"<instructions>\""
+		" | screen -r <name> | screen -ls";
+
 	if (args.empty()) {
-		std::cout << "Usage: screen -s <name> | screen -r <name> | screen -ls" << std::endl;
+		std::cout << usage << std::endl;
 		return;
 	}
 
-	// --- screen -ls ---
 	if (args == "-ls") {
 		handleScreenList();
 		return;
 	}
 
-	// --- screen -s or -r: need at least "-s x" (4 chars) ---
-	if (args.size() < 4) {
-		std::cout << "Usage: screen -s <name> | screen -r <name> | screen -ls" << std::endl;
+	if (args.size() < 3) {
+		std::cout << usage << std::endl;
 		return;
 	}
 
-	std::string flag = args.substr(0, 2);          // "-s" or "-r"
-	std::string processName = args.substr(3);       // everything after "-s " or "-r "
+	std::string flag = args.substr(0, 2);            // "-s" / "-c" / "-r"
+	std::string rest = trimStr(args.substr(2));
 
-	if (flag != "-s" && flag != "-r") {
-		std::cout << "Unknown screen flag: '" << flag << "'" << std::endl;
+	if (flag == "-s")      handleScreenCreate(rest);
+	else if (flag == "-c") handleScreenCustom(rest);
+	else if (flag == "-r") handleScreenResume(rest);
+	else std::cout << "Unknown screen flag: '" << flag << "'" << std::endl;
+}
+
+// All process memory sizes are powers of 2 within [2^6, 2^16] bytes.
+bool ConsoleManager::validMemorySize(std::size_t bytes) const {
+	return isPowerOfTwo(bytes) && bytes >= 64 && bytes <= 65536;
+}
+
+// screen -s <name> <memory>
+void ConsoleManager::handleScreenCreate(const std::string& rest) {
+	std::istringstream iss(rest);
+	std::string name, memToken;
+	iss >> name >> memToken;
+
+	if (name.empty() || memToken.empty()) {
+		std::cout << "Usage: screen -s <name> <memory>" << std::endl;
 		return;
 	}
 
-	if (processName.empty()) {
+	std::size_t memBytes = 0;
+	try { memBytes = static_cast<std::size_t>(std::stoull(memToken)); }
+	catch (...) { std::cout << "invalid memory allocation" << std::endl; return; }
+
+	if (!validMemorySize(memBytes)) {
+		std::cout << "invalid memory allocation" << std::endl;
+		return;
+	}
+
+	auto process = scheduler->createProcess(name, memBytes);
+	if (!process) {
+		std::cout << "Error: Could not create process '" << name << "'." << std::endl;
+		return;
+	}
+
+	attachedProcess = process;
+	currentState = State::PROCESS_SCREEN;
+	clearScreen();
+	displayProcessSMI();
+}
+
+// screen -c <name> <memory> "<instruction; instruction; ...>"
+void ConsoleManager::handleScreenCustom(const std::string& rest) {
+	std::istringstream iss(rest);
+	std::string name, memToken;
+	iss >> name >> memToken;
+
+	if (name.empty() || memToken.empty()) {
+		std::cout << "Usage: screen -c <name> <memory> \"<instructions>\"" << std::endl;
+		return;
+	}
+
+	// everything after the memory token is the instruction string
+	std::string program;
+	std::getline(iss, program);
+	program = trimStr(program);
+	if (program.empty()) {
+		std::cout << "invalid command" << std::endl;
+		return;
+	}
+
+	std::size_t memBytes = 0;
+	try { memBytes = static_cast<std::size_t>(std::stoull(memToken)); }
+	catch (...) { std::cout << "invalid memory allocation" << std::endl; return; }
+
+	if (!validMemorySize(memBytes)) {
+		std::cout << "invalid memory allocation" << std::endl;
+		return;
+	}
+
+	// 1 - 50 instructions, counted before FOR loops are unrolled
+	int count = Process::countTopLevel(program);
+	if (count < 1 || count > 50) {
+		std::cout << "invalid command" << std::endl;
+		return;
+	}
+
+	std::vector<Process::Instruction> parsed;
+	std::string error;
+	if (!Process::parseProgram(program, parsed, error)) {
+		std::cout << "invalid command (" << error << ")" << std::endl;
+		return;
+	}
+
+	auto process = scheduler->createProcess(name, memBytes, parsed);
+	if (!process) {
+		std::cout << "Error: Could not create process '" << name << "'." << std::endl;
+		return;
+	}
+
+	attachedProcess = process;
+	currentState = State::PROCESS_SCREEN;
+	clearScreen();
+	displayProcessSMI();
+}
+
+// screen -r <name>
+void ConsoleManager::handleScreenResume(const std::string& name) {
+	if (name.empty()) {
 		std::cout << "Error: Process name cannot be empty." << std::endl;
 		return;
 	}
 
-	if (flag == "-s") {
-		// Create a new process and attach to it
-		auto process = scheduler->createProcess(processName);
-		if (!process) {
-			std::cout << "Error: Could not create process '" << processName << "'." << std::endl;
-			return;
-		}
-		attachedProcess = process;
-		currentState = State::PROCESS_SCREEN;
-		clearScreen();
-		displayProcessSMI();
+	auto any = scheduler->lookupProcess(name);
+
+	// MCO2: a process killed by an access violation reports how and when it died.
+	if (any && any->violated) {
+		std::cout << "Process " << name
+		          << " shut down due to memory access violation error that occurred at "
+		          << any->violationTime << ". " << any->violationAddress << " invalid."
+		          << std::endl;
+		return;
 	}
-	else { // -r
-		// Re-attach to an existing process
-		auto process = scheduler->findProcess(processName);
-		if (!process) {
-			std::cout << "Process " << processName << " not found." << std::endl;
-			return;
-		}
-		attachedProcess = process;
-		currentState = State::PROCESS_SCREEN;
-		clearScreen();
-		displayProcessSMI();
-	
+
+	auto process = scheduler->findProcess(name);
+	if (!process) {
+		std::cout << "Process " << name << " not found." << std::endl;
+		return;
 	}
+
+	attachedProcess = process;
+	currentState = State::PROCESS_SCREEN;
+	clearScreen();
+	displayProcessSMI();
 }
 
-// 
+//
 // screen -ls: List all processes (running + finished) in a table
 //
 void ConsoleManager::handleScreenList() {
@@ -256,7 +432,7 @@ void ConsoleManager::handleReportUtil() {
 	std::cout << "Report generated at csopesy-log.txt" << std::endl;
 }
 
-// Shared: format and print the full process table to any stream 
+// Shared: format and print the full process table to any stream
 // (used by both handleScreenList and handleReportUtil)
 //
 void ConsoleManager::printProcessTable(std::ostream& out) {
@@ -268,7 +444,7 @@ void ConsoleManager::printProcessTable(std::ostream& out) {
 	out << "Cores Used: " << coresUsed << std::endl;
 	out << "Cores Available: " << coresAvail << std::endl;
 	out << std::endl;
-	out << std::string(72, '-') << std::endl;
+	out << std::string(78, '-') << std::endl;
 
 	auto processes = scheduler->getAllProcesses();
 
@@ -289,20 +465,87 @@ void ConsoleManager::printProcessTable(std::ostream& out) {
 	out << "Finished Processes:" << std::endl;
 	for (const auto& p : processes) {
 		if (p->isFinished) {
+			// A process killed by an access violation is finished, but not completed.
+			std::string status = p->violated ? "Violation" : "Finished";
 			out << std::left << std::setw(16) << p->name
 				<< std::left << std::setw(28) << ("(" + p->createdAt + ")")
-				<< std::left << std::setw(10) << "Finished"
-				<< std::right << std::setw(6) << p->totalLines
+				<< std::left << std::setw(10) << status
+				<< std::right << std::setw(6) << p->currentLine
 				<< " / " << p->totalLines
 				<< std::endl;
 		}
 	}
 
-	out << std::string(72, '-') << std::endl;
+	out << std::string(78, '-') << std::endl;
 }
 
 //
-// Process screen: dispatch commands 
+// MCO2 process-smi (main menu): nvidia-smi style memory summary
+//
+void ConsoleManager::displaySystemSMI() {
+	MemoryManager& mm = scheduler->memory();
+	mm.flushBackingStore(true);          // make the backing store file current
+
+	std::size_t total = mm.totalMemory();
+	std::size_t used  = mm.usedMemory();
+	double memUtil    = (total == 0) ? 0.0 : (used * 100.0) / static_cast<double>(total);
+
+	std::cout << std::endl;
+	std::cout << "--------------------------------------------------" << std::endl;
+	std::cout << "| PROCESS-SMI V01.00   Driver Version: 01.00      |" << std::endl;
+	std::cout << "--------------------------------------------------" << std::endl;
+	std::cout << "CPU-Util: " << std::fixed << std::setprecision(0)
+	          << scheduler->getCpuUtilization() << "%" << std::endl;
+	std::cout << "Memory Usage: " << used << "B / " << total << "B" << std::endl;
+	std::cout << "Memory Util: " << std::fixed << std::setprecision(0) << memUtil << "%" << std::endl;
+	std::cout << std::endl;
+	std::cout << "==================================================" << std::endl;
+	std::cout << "Running processes and memory usage:" << std::endl;
+	std::cout << "--------------------------------------------------" << std::endl;
+
+	auto processes = scheduler->getAllProcesses();
+	bool anyRunning = false;
+	for (const auto& p : processes) {
+		if (p->isFinished) continue;
+		anyRunning = true;
+		std::cout << std::left << std::setw(20) << p->name
+		          << std::right << std::setw(8) << mm.processResidentBytes(p->pid) << "B"
+		          << "   (allocated " << p->memoryBytes << "B)" << std::endl;
+	}
+	if (!anyRunning) std::cout << "(no running processes)" << std::endl;
+
+	std::cout << "--------------------------------------------------" << std::endl;
+}
+
+//
+// MCO2 vmstat: the fine-grained view
+//
+void ConsoleManager::displayVmstat() {
+	MemoryManager& mm = scheduler->memory();
+	mm.flushBackingStore(true);
+
+	auto processes = scheduler->getAllProcesses();
+	std::size_t active = 0, inactive = 0;
+	for (const auto& p : processes) {
+		if (p->isFinished) inactive++;
+		else               active++;
+	}
+
+	std::cout << std::endl;
+	std::cout << std::setw(14) << mm.totalMemory()          << " bytes total memory"     << std::endl;
+	std::cout << std::setw(14) << mm.usedMemory()           << " bytes used memory"      << std::endl;
+	std::cout << std::setw(14) << mm.freeMemory()           << " bytes free memory"      << std::endl;
+	std::cout << std::setw(14) << active                    << " active processes"       << std::endl;
+	std::cout << std::setw(14) << inactive                  << " inactive processes"     << std::endl;
+	std::cout << std::setw(14) << scheduler->getIdleTicks()   << " idle cpu ticks"       << std::endl;
+	std::cout << std::setw(14) << scheduler->getActiveTicks() << " active cpu ticks"     << std::endl;
+	std::cout << std::setw(14) << scheduler->getTotalTicks()  << " total cpu ticks"      << std::endl;
+	std::cout << std::setw(14) << mm.pagedIn()              << " num paged in"           << std::endl;
+	std::cout << std::setw(14) << mm.pagedOut()             << " num paged out"          << std::endl;
+}
+
+//
+// Process screen: dispatch commands
 //
 void ConsoleManager::handleProcessScreenCommand(const std::string& input) {
 	if (input.empty()) return;
@@ -324,7 +567,7 @@ void ConsoleManager::handleProcessScreenCommand(const std::string& input) {
 }
 
 //
-// Display Procss info + logs (process-smi)
+// Display Procss info + logs (process-smi inside a process screen)
 //
 void ConsoleManager::displayProcessSMI() {
 	if (!attachedProcess) return;
@@ -333,6 +576,10 @@ void ConsoleManager::displayProcessSMI() {
 	std::cout << "Process Name: " << attachedProcess->name << std::endl;
 	std::cout << "ID:           " << attachedProcess->pid << std::endl;
 	std::cout << "Created:      " << attachedProcess->createdAt << std::endl;
+	std::cout << "Memory:       " << attachedProcess->memoryBytes << "B allocated, "
+	          << scheduler->memory().processResidentBytes(attachedProcess->pid)
+	          << "B resident" << std::endl;
+	std::cout << "Page faults:  " << attachedProcess->pageFaults << std::endl;
 	std::cout << std::endl;
 	std::cout << "Current instruction line: " << attachedProcess->currentLine << std::endl;
 	std::cout << "Lines of code:            " << attachedProcess->totalLines << std::endl;
@@ -349,13 +596,20 @@ void ConsoleManager::displayProcessSMI() {
 		}
 	}
 
-	if (attachedProcess->isFinished)
+	if (attachedProcess->violated) {
+		std::cout << "Process " << attachedProcess->name
+		          << " shut down due to memory access violation error that occurred at "
+		          << attachedProcess->violationTime << ". "
+		          << attachedProcess->violationAddress << " invalid." << std::endl;
+	}
+	else if (attachedProcess->isFinished) {
 		std::cout << "Finished!" << std::endl;
+	}
 }
 
-// 
+//
 // Get the current time as a formatted string
-// 
+//
 std::string ConsoleManager::getCurrentTimestamp() {
 	std::time_t now = std::time(nullptr);
 	std::tm tm_info{};
@@ -368,5 +622,3 @@ std::string ConsoleManager::getCurrentTimestamp() {
 	std::strftime(buf, sizeof(buf), "%m/%d/%Y %I:%M:%S%p", &tm_info);
 	return std::string(buf);
 }
-
-

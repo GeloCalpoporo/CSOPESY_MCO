@@ -8,22 +8,22 @@
 #include "Scheduler.h"
 
 class ConsoleManager {
-public: 
+public:
 	ConsoleManager();
-	void run(); 
+	void run();
 
-private: 
+private:
 	// State Machine
 	enum class State {
 		MAIN_MENU, PROCESS_SCREEN
 	};
 	State currentState = State::MAIN_MENU;
 
-	// Config 
+	// Config
 	Config config;
-	bool initialized = false; 
+	bool initialized = false;
 
-	// Scheduler 
+	// Scheduler
 	std::shared_ptr<Scheduler> scheduler;
 
 	// Currently attached process (only valid in PROCESS_SCREEN)
@@ -44,6 +44,16 @@ private:
 	void handleScreenCommand(const std::string& args);
 	void handleScreenList();
 	void handleReportUtil();
+
+	// MCO2 main-menu views
+	void displaySystemSMI();     // process-smi: memory summary + per-process usage
+	void displayVmstat();        // vmstat: fine-grained memory and tick counters
+
+	// MCO2 screen sub-commands
+	void handleScreenCreate(const std::string& args);   // screen -s <name> <mem>
+	void handleScreenCustom(const std::string& args);   // screen -c <name> <mem> "<instrs>"
+	void handleScreenResume(const std::string& name);   // screen -r <name>
+	bool validMemorySize(std::size_t bytes) const;      // power of 2 within [2^6, 2^16]
 
 	// process screen handlers
 	void handleProcessScreenCommand(const std::string& input);

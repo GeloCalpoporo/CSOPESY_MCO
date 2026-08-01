@@ -363,3 +363,13 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# ── CSOPESY MCO2: CMake / CLion build output and runtime artifacts ──
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.exe
+csopesy-log.txt
+csopesy-backing-store.txt
