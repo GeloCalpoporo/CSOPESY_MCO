@@ -17,3 +17,7 @@ Tests/out/
 # IDE
 .idea/
 .vs/
+
+# quiz material — never commit
+*mockup-quiz*
+*MOCKUPQUIZ*
