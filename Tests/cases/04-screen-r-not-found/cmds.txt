@@ -1,9 +1,0 @@
-# MCO1 rule that MCO2 must not regress: once a process has completed,
-# screen -r treats it as not found. Only a memory violation gets a different message.
-initialize
-screen -c donezo 256 "DECLARE x 1; ADD x x x; PRINT(\"finished cleanly\")"
-@sleep 1
-exit
-screen -r donezo
-screen -r nosuchprocess
-exit

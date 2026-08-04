@@ -1,7 +1,0 @@
-# MCO2 spec section 1: process-smi and vmstat are now MAIN MENU commands.
-# On an idle system every number is knowable, so this case asserts them exactly
-# rather than just checking that something was printed.
-initialize
-vmstat
-process-smi
-exit

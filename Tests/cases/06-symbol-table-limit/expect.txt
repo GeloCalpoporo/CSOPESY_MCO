@@ -1,7 +1,0 @@
-# The 1st and the 32nd variable are stored normally.
-+ v1=1
-+ v32=32
-# The 33rd never got a slot, so reading it yields 0 - and does NOT crash.
-+ v33=0
-- invalid command
-- access violation

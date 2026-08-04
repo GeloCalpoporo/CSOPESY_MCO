@@ -12,10 +12,7 @@ scheduler — plus memory management.
 - Carlos, Miguel
 - Tujan, Nio
 
-**Last Updated:** 08-01-2026
-
-> Full documentation — every command, the instruction set, configuration, and how
-> the memory manager works — is in **[README.txt](README.txt)** (the submission copy).
+**Last Updated:** 08-04-2026
 
 ---
 
@@ -30,9 +27,9 @@ scheduler — plus memory management.
 │   ├── Scheduler.h/.cpp        CPU tick loop and scheduling logic
 │   ├── MemoryManager.h/.cpp    Demand paging, frames, backing store
 │   └── config.txt              Runtime configuration file
+├── PPT/                        Technical report
 ├── .gitignore
 ├── CMakeLists.txt
-├── README.txt                  Full documentation
 └── README.md
 ```
 
@@ -117,6 +114,23 @@ prints `Result: 15`.
 
 ---
 
+## Process Instructions
+
+| Instruction | Meaning |
+|---|---|
+| `PRINT(msg)` | Print a message. Default: `Hello world from <name>!` Supports `PRINT("text " + var)`. |
+| `DECLARE(var, value)` | Declare a uint16 variable. |
+| `ADD(var1, var2/val, var3/val)` | `var1 = var2 + var3`, clamped to 65535. |
+| `SUBTRACT(var1, var2/val, var3/val)` | `var1 = var2 - var3`, clamped to 0. |
+| `SLEEP(X)` | Sleep X CPU ticks and relinquish the CPU. |
+| `FOR([instructions], repeats)` | Loop. Nestable up to 3 levels. |
+| `READ(var, address)` | Read a uint16 from memory into `var`. |
+| `WRITE(address, value/var)` | Write a uint16 to memory. |
+
+Addresses are hexadecimal (`0x500`) or decimal.
+
+---
+
 ## Configuration (`config.txt`)
 
 ```
@@ -135,6 +149,28 @@ max-mem-per-proc    4096
 ```
 
 The four memory parameters must each be a power of 2 within `[64, 65536]` bytes.
+
+---
+
+## How memory management works
+
+Demand paging. A process starts with **no pages resident**. The first time it touches
+its symbol table or a `READ`/`WRITE` address, a page fault occurs and the page is loaded
+into a free frame. When no frame is free, a FIFO victim is evicted to
+`csopesy-backing-store.txt` and its owner loses residency.
+
+Per the spec, an instruction only runs once every page it touches is resident: a faulting
+instruction is **not** executed and **not** advanced, and is restarted on a later tick.
+Every page an instruction needs is acquired together, so an instruction needing two pages
+cannot end up holding one and losing it before the restart.
+
+Memory is allocated and page faults are handled only while the process holds a CPU core.
+A process keeps its memory until it finishes; its frames and backing store pages are then
+reclaimed.
+
+One CPU tick executes one instruction per busy core. The tick rate is capped at about
+1000 ticks per second so `scheduler-start` generates processes at a demonstrable rate
+rather than exhausting memory.
 
 ---
 

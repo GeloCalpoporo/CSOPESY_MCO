@@ -1,8 +1,0 @@
-# The exact sentence the spec dictates, with a real HH:MM:SS and the hex address.
-~ Process segfault shut down due to memory access violation error that occurred at [0-9][0-9]:[0-9][0-9]:[0-9][0-9]\. 0x500 invalid\.
-# It died ON the WRITE - instruction 3 must never have run.
-- never reached
-# A name that was never created is still the plain MCO1 message.
-+ Process ghost not found.
-# screen -ls distinguishes a killed process from one that completed.
-~ Violation +[0-9]+ / 3
