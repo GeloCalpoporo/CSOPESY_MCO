@@ -11,7 +11,7 @@ namespace {
     // ~1000 processes/sec instead of millions - an unbounded tick rate exhausts memory
     // within seconds of a demo. The deadline moves by a fixed period and the loop catches
     // up after an oversleep, so the average rate holds even with Windows' coarse timer.
-    constexpr auto TICK_PERIOD = std::chrono::milliseconds(1);
+    constexpr auto TICK_PERIOD = std::chrono::milliseconds(4);
     constexpr auto MAX_LAG     = std::chrono::milliseconds(200);
 
     std::string nowTimestamp() {

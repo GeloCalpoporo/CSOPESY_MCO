@@ -561,7 +561,7 @@ void Process::genFlat(int target, int depth, std::mt19937& rng) {
     std::uniform_int_distribution<int> val(0, 500);
     std::uniform_int_distribution<int> slp(1, 3);
     std::uniform_int_distribution<int> rep(2, 3);
-    std::uniform_int_distribution<int> memChance(0, 3);         // ~25% memory instructions
+    std::uniform_int_distribution<int> memChance(0, 1);         // ~25% memory instructions
     std::uniform_int_distribution<std::size_t> addrSel(
         SYMBOL_TABLE_BYTES / 2, allowMemoryOps ? maxAddr / 2 : SYMBOL_TABLE_BYTES / 2);
 
