@@ -207,6 +207,10 @@ void ConsoleManager::handleMainMenuCommand(const std::string& input) {
 	if (input.empty()) return;
 
 	if (input == "exit") {
+		// Leave a current backing-store file behind: the spec says it must be readable
+		// at any time, and a run shorter than the flush throttle would otherwise end
+		// with a file whose counters disagree with the last vmstat.
+		if (initialized && scheduler) scheduler->memory().flushBackingStore(true);
 		std::cout << "Exiting CSOPESY Emulator. Goodbye!" << std::endl;
 		running = false;
 		return;
@@ -460,7 +464,7 @@ void ConsoleManager::handleScreenResume(const std::string& name) {
 //
 void ConsoleManager::handleScreenList() {
 	std::cout << std::endl;
-	printProcessTable(std::cout);
+	printProcessTable(std::cout, CONSOLE_LIST_ROWS);
 }
 
 //
@@ -474,7 +478,7 @@ void ConsoleManager::handleReportUtil() {
 		std::cout << "Error: Could not open csopesy-log.txt for writing." << std::endl;
 		return;
 	}
-	printProcessTable(file);
+	printProcessTable(file);          // no row cap: the log file gets every process
 	file.close();
 
 	std::cout << "Report generated at csopesy-log.txt" << std::endl;
@@ -483,48 +487,55 @@ void ConsoleManager::handleReportUtil() {
 // Shared: format and print the full process table to any stream
 // (used by both handleScreenList and handleReportUtil)
 //
-void ConsoleManager::printProcessTable(std::ostream& out) {
+void ConsoleManager::printProcessTable(std::ostream& out, std::size_t maxRows) {
 	double utilPct = scheduler->getCpuUtilization();
 	int coresUsed  = scheduler->getCoresUsed();
 	int coresAvail = scheduler->getCoresAvailable();
 
-	out << "CPU Utilization: " << std::fixed << std::setprecision(0) << utilPct << "%" << std::endl;
-	out << "Cores Used: " << coresUsed << std::endl;
-	out << "Cores Available: " << coresAvail << std::endl;
-	out << std::endl;
-	out << std::string(78, '-') << std::endl;
+	// '\n' rather than std::endl throughout: std::endl flushes, and one flush per row
+	// is what makes a Windows console lock up when a stress config has produced
+	// thousands of processes. The single flush at the end is enough.
+	std::ostringstream buf;
+	buf << "CPU Utilization: " << std::fixed << std::setprecision(0) << utilPct << "%\n";
+	buf << "Cores Used: " << coresUsed << '\n';
+	buf << "Cores Available: " << coresAvail << '\n';
+	buf << '\n';
+	buf << std::string(78, '-') << '\n';
 
 	auto processes = scheduler->getAllProcesses();
 
-	out << "Running Processes:" << std::endl;
-	for (const auto& p : processes) {
-		if (!p->isFinished) {
-			std::string coreLabel = "Core " + std::to_string(p->coreId) + ":";
-			out << std::left << std::setw(16) << p->name
-				<< std::left << std::setw(28) << ("(" + p->createdAt + ")")
-				<< std::left << std::setw(10) << coreLabel
-				<< std::right << std::setw(6) << p->currentLine
-				<< " / " << p->totalLines
-				<< std::endl;
-		}
-	}
+	// Print at most maxRows rows per section (0 = unlimited, used for the log file).
+	// The hidden ones are still counted, so no information is lost - a 20,000-process
+	// stress run stays readable on camera instead of scrolling for a minute.
+	auto section = [&](const char* title, bool finished) {
+		buf << title << '\n';
+		std::size_t shown = 0, hidden = 0;
+		for (const auto& p : processes) {
+			if (p->isFinished != finished) continue;
+			if (maxRows > 0 && shown >= maxRows) { hidden++; continue; }
 
-	out << std::endl;
-	out << "Finished Processes:" << std::endl;
-	for (const auto& p : processes) {
-		if (p->isFinished) {
-			// A process killed by an access violation is finished, but not completed.
-			std::string status = p->violated ? "Violation" : "Finished";
-			out << std::left << std::setw(16) << p->name
-				<< std::left << std::setw(28) << ("(" + p->createdAt + ")")
-				<< std::left << std::setw(10) << status
-				<< std::right << std::setw(6) << p->currentLine
-				<< " / " << p->totalLines
-				<< std::endl;
+			std::string label = finished ? (p->violated ? "Violation" : "Finished")
+			                             : ("Core " + std::to_string(p->coreId) + ":");
+			buf << std::left  << std::setw(16) << p->name
+			    << std::left  << std::setw(28) << ("(" + p->createdAt + ")")
+			    << std::left  << std::setw(10) << label
+			    << std::right << std::setw(6)  << p->currentLine
+			    << " / " << p->totalLines
+			    << '\n';
+			shown++;
 		}
-	}
+		if (hidden > 0)
+			buf << "... and " << hidden << " more (showing the first " << maxRows
+			    << " - report-util writes the full list)\n";
+	};
 
-	out << std::string(78, '-') << std::endl;
+	section("Running Processes:", false);
+	buf << '\n';
+	section("Finished Processes:", true);
+
+	buf << std::string(78, '-') << '\n';
+
+	out << buf.str() << std::flush;
 }
 
 //
@@ -552,17 +563,22 @@ void ConsoleManager::displaySystemSMI() {
 	std::cout << "--------------------------------------------------" << std::endl;
 
 	auto processes = scheduler->getAllProcesses();
-	bool anyRunning = false;
+	std::ostringstream buf;                  // buffered for the same reason as screen -ls
+	std::size_t shown = 0, hidden = 0;
 	for (const auto& p : processes) {
 		if (p->isFinished) continue;
-		anyRunning = true;
-		std::cout << std::left << std::setw(20) << p->name
-		          << std::right << std::setw(8) << mm.processResidentBytes(p->pid) << "B"
-		          << "   (allocated " << p->memoryBytes << "B)" << std::endl;
+		if (shown >= CONSOLE_LIST_ROWS) { hidden++; continue; }
+		buf << std::left  << std::setw(20) << p->name
+		    << std::right << std::setw(8)  << mm.processResidentBytes(p->pid) << "B"
+		    << "   (allocated " << p->memoryBytes << "B)\n";
+		shown++;
 	}
-	if (!anyRunning) std::cout << "(no running processes)" << std::endl;
+	if (shown == 0)  buf << "(no running processes)\n";
+	if (hidden > 0)  buf << "... and " << hidden << " more running (showing the first "
+	                     << CONSOLE_LIST_ROWS << ")\n";
 
-	std::cout << "--------------------------------------------------" << std::endl;
+	buf << "--------------------------------------------------\n";
+	std::cout << buf.str() << std::flush;
 }
 
 //

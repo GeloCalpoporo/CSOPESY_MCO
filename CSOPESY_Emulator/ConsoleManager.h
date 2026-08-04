@@ -61,7 +61,11 @@ private:
 	void displayProcessSMI();
 
 	// Shared output (used by - screen -ls - report-util)
-	void printProcessTable(std::ostream& out);
+	// maxRows caps each section so a stress run with thousands of processes stays
+	// readable (and does not lock up the Windows console). 0 = print everything,
+	// which is what csopesy-log.txt gets.
+	static constexpr std::size_t CONSOLE_LIST_ROWS = 30;
+	void printProcessTable(std::ostream& out, std::size_t maxRows = 0);
 
 	//Utility
 	std::string getCurrentTimestamp();

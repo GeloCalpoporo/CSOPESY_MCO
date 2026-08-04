@@ -84,6 +84,13 @@ public:
     // needed was not resident and no frame could be spared. The scheduler reads this
     // so CPU utilization reports work actually done, not merely cores occupied.
     bool               stalledOnMemory = false;
+
+    // True between a serviced page fault and the restarted instruction that consumes it.
+    // The pages stay pinned across that tick boundary, otherwise the other process evicts
+    // them before the restart and neither ever executes. Scheduler calls releasePages()
+    // whenever the process gives up its core so the pins cannot outlive it.
+    bool               holdingPages    = false;
+    void               releasePages();
     bool               violated     = false;   // killed by an access violation
     std::string        violationTime;          // "HH:MM:SS"
     std::string        violationAddress;       // "0x500"
@@ -102,7 +109,6 @@ private:
     // Paging helpers. ensurePages returns false when a fault was raised, meaning the
     // caller must restart the instruction on a later tick.
     bool ensurePages(const Instruction& ins);
-    bool touch(std::size_t addr);                   // one address; false => faulted
     bool inRange(std::size_t addr) const;           // addr and addr+1 inside our space
     void raiseViolation(std::size_t addr);
 

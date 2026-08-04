@@ -11,3 +11,12 @@
 - (no pages currently in the backing store)
 # A quantum of 0 under FCFS must not stall or crash anything.
 - invalid
+# --- the machine must actually RETIRE INSTRUCTIONS, not just page ---
+# This case originally livelocked: acquiring one page at a time let each process take a
+# page, fail to get the second, drop it, and lose it to the other before its restart.
+# vmstat looked busy (tens of thousands of page-ins) while screen -ls sat frozen at ~50
+# instructions and under 200 active ticks. Everything above still passed. These three
+# lines are what would have caught it, so they stay.
+~ [0-9]{4,} active cpu ticks
+~ ^p1 +\(.*[0-9]{3,} / 4000
+~ ^p2 +\(.*[0-9]{3,} / 4000

@@ -10,3 +10,7 @@ N 10 bytes total memory
 # No deadlock: processes are still reaching the finished list.
 ~ Finished +[0-9]+ / [0-9]+
 ~ [1-9][0-9]* inactive processes
+# The console stays bounded. This config makes thousands of processes; printing one
+# line each (with a flush per line) is what locked up the Windows terminal mid-recording.
+# Now the table is capped and the remainder is summarised.
+~ \.\.\. and [0-9]+ more

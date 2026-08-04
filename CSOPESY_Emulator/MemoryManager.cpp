@@ -109,20 +109,13 @@ long long MemoryManager::takeVictimFrame() {
     return -1;   // every frame is pinned - caller retries on the next tick
 }
 
-MemoryManager::Access MemoryManager::ensureResident(int pid, std::size_t addr, bool pin) {
-    std::lock_guard<std::mutex> lock(mtx);
-
+long long MemoryManager::bringInLocked(int pid, std::size_t vpage) {
     auto tit = tables.find(pid);
-    if (tit == tables.end()) return Access::FAILED;
+    if (tit == tables.end()) return -1;
 
     PageTable& pt = tit->second;
-    std::size_t vpage = addr / memPerFrame;
-    if (vpage >= pt.numPages) return Access::FAILED;   // caller should have caught this
-
-    if (pt.frameOf[vpage] >= 0) {                      // already resident: no fault
-        if (pin) frames[static_cast<std::size_t>(pt.frameOf[vpage])].pinned = true;
-        return Access::HIT;
-    }
+    if (vpage >= pt.numPages)  return -1;                   // caller should have caught this
+    if (pt.frameOf[vpage] >= 0) return pt.frameOf[vpage];   // already resident: no fault
 
     // ----- page fault -----
     long long frameIdx;
@@ -131,7 +124,7 @@ MemoryManager::Access MemoryManager::ensureResident(int pid, std::size_t addr, b
         freeFrames.pop_front();
     } else {
         frameIdx = takeVictimFrame();
-        if (frameIdx < 0) return Access::FAILED;
+        if (frameIdx < 0) return -1;                  // every frame is pinned or too young
     }
 
     std::size_t fi     = static_cast<std::size_t>(frameIdx);
@@ -148,15 +141,59 @@ MemoryManager::Access MemoryManager::ensureResident(int pid, std::size_t addr, b
         std::fill(physical.begin() + offset, physical.begin() + offset + memPerFrame, 0);
     }
     ++numPagedIn;
+    storeDirty = true;      // the file header carries this counter, so it is now stale too
 
     frames[fi].pid        = pid;
     frames[fi].vpage      = vpage;
-    frames[fi].pinned     = pin;
+    frames[fi].pinned     = false;                    // acquirePages does the pinning
     frames[fi].loadedTick = currentTick;
     pt.frameOf[vpage]     = frameIdx;
     fifo.push_back(fi);
 
-    return Access::FAULT_SERVICED;
+    return frameIdx;
+}
+
+MemoryManager::Acquire MemoryManager::acquirePages(int pid,
+                                                   const std::vector<std::size_t>& addresses) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto tit = tables.find(pid);
+    if (tit == tables.end()) return Acquire::FAILED;
+    const std::size_t numPages = tit->second.numPages;
+
+    // The distinct pages this one instruction needs resident at the same moment.
+    std::vector<std::size_t> want;
+    for (std::size_t addr : addresses) {
+        std::size_t vp = addr / memPerFrame;
+        if (vp >= numPages) return Acquire::FAILED;
+        if (std::find(want.begin(), want.end(), vp) == want.end()) want.push_back(vp);
+    }
+
+    std::vector<std::size_t> pinnedHere;
+    bool faulted = false;
+
+    for (std::size_t vp : want) {
+        bool      wasResident = tit->second.frameOf[vp] >= 0;
+        long long fi          = bringInLocked(pid, vp);
+
+        if (fi < 0) {
+            // Cannot complete the set. Undo our pins so the frames we did take go back
+            // into circulation - a half-acquired instruction must never hold memory
+            // hostage, or two processes deadlock holding one page each.
+            for (std::size_t p : pinnedHere) frames[p].pinned = false;
+            return Acquire::FAILED;
+        }
+
+        if (!wasResident) faulted = true;
+
+        std::size_t f = static_cast<std::size_t>(fi);
+        if (!frames[f].pinned) {
+            frames[f].pinned = true;
+            pinnedHere.push_back(f);
+        }
+    }
+
+    return faulted ? Acquire::FAULTS_SERVICED : Acquire::ALL_RESIDENT;
 }
 
 void MemoryManager::setTick(unsigned long long tick) {

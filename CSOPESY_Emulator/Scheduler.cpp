@@ -271,10 +271,12 @@ void Scheduler::schedulerLoop() {
                     c.proc = nullptr;
                 }
                 else if (p->isSleeping()) {               // SLEEP -> relinquish core
+                    p->releasePages();                   // pins must not outlive the core
                     sleeping.push_back(p);
                     c.proc = nullptr;
                 }
                 else if (useRoundRobin && c.quantumLeft <= 0) {   // quantum -> preempt
+                    p->releasePages();
                     readyQueue.push_back(p);
                     c.proc = nullptr;
                 }

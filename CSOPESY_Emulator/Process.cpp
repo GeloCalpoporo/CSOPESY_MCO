@@ -265,13 +265,15 @@ void Process::executeNextInstruction() {
     // A fault (or an access violation) leaves currentLine untouched - the instruction
     // is restarted on a later tick.
     if (!ensurePages(ins)) {
-        if (mm) mm->unpinProcess(pid);
+        // Pages acquired for a serviced fault are KEPT pinned so the restart on the next
+        // tick can actually use them. Any other failure holds nothing.
+        if (!holdingPages) releasePages();
         stalledOnMemory = !isFinished;   // a violation ends the process, it is not a stall
         return;
     }
 
     executeOne(ins);
-    if (mm) mm->unpinProcess(pid);
+    releasePages();
     stalledOnMemory = false;
 
     currentLine++;
@@ -284,13 +286,6 @@ bool Process::inRange(std::size_t addr) const {
     return memoryBytes >= 2 && addr + 1 < memoryBytes;
 }
 
-bool Process::touch(std::size_t addr) {
-    if (!mm) return true;
-    MemoryManager::Access a = mm->ensureResident(pid, addr, true);
-    if (a == MemoryManager::Access::HIT) return true;
-    if (a == MemoryManager::Access::FAULT_SERVICED) ++pageFaults;
-    return false;                       // restart the instruction on a later tick
-}
 
 void Process::raiseViolation(std::size_t addr) {
     std::ostringstream hex;
@@ -335,6 +330,13 @@ bool Process::ensurePages(const Instruction& ins) {
         return false;
     }
 
+    // Every byte this instruction reaches for. A uint16 spans two bytes and may straddle
+    // a page boundary, so both ends are listed.
+    std::vector<std::size_t> addrs;
+    if (needsSymbolTable) { addrs.push_back(0); addrs.push_back(SYMBOL_TABLE_BYTES - 1); }
+    if (touchesMemory)    { addrs.push_back(ins.address); addrs.push_back(ins.address + 1); }
+    if (addrs.empty()) return true;                    // touches no memory at all
+
     // One instruction can need the symbol table page and a data page resident at the
     // same moment. If physical memory has fewer frames than that, no amount of paging
     // will ever satisfy it and the process would retry forever, taking a core with it.
@@ -342,12 +344,10 @@ bool Process::ensurePages(const Instruction& ins) {
     {
         std::size_t frameSize = mm->frameSize();
         std::vector<std::size_t> pages;
-        auto note = [&](std::size_t addr) {
-            std::size_t vp = addr / frameSize;
+        for (std::size_t a : addrs) {
+            std::size_t vp = a / frameSize;
             if (std::find(pages.begin(), pages.end(), vp) == pages.end()) pages.push_back(vp);
-        };
-        if (needsSymbolTable) { note(0); note(SYMBOL_TABLE_BYTES - 1); }
-        if (touchesMemory)    { note(ins.address); note(ins.address + 1); }
+        }
 
         if (pages.size() > mm->totalFrames()) {
             raiseViolation(ins.address);
@@ -361,16 +361,24 @@ bool Process::ensurePages(const Instruction& ins) {
         }
     }
 
-    if (needsSymbolTable) {
-        if (!touch(0)) return false;
-        if (SYMBOL_TABLE_BYTES > 1 && !touch(SYMBOL_TABLE_BYTES - 1)) return false;
+    // All of them or none of them, in one step. Taking the pages one at a time is what
+    // livelocked two processes sharing two frames.
+    MemoryManager::Acquire r = mm->acquirePages(pid, addrs);
+    if (r == MemoryManager::Acquire::FAILED) {
+        holdingPages = false;                         // memory is fully pinned right now
+        return false;
     }
-
-    if (touchesMemory) {
-        if (!touch(ins.address))     return false;
-        if (!touch(ins.address + 1)) return false;
+    if (r == MemoryManager::Acquire::FAULTS_SERVICED) {
+        ++pageFaults;
+        holdingPages = true;                          // keep them through the restart
+        return false;                                 // restart the instruction next tick
     }
     return true;
+}
+
+void Process::releasePages() {
+    if (mm) mm->unpinProcess(pid);
+    holdingPages = false;
 }
 
 // ----- Instruction dispatch -----

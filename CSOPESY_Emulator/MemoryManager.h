@@ -25,9 +25,10 @@
 //
 class MemoryManager {
 public:
-    // Result of touching an address. FAULT_SERVICED means the page was not resident,
-    // a fault was handled, and the instruction must be RESTARTED (spec p.6).
-    enum class Access { HIT, FAULT_SERVICED, FAILED };
+    // Result of acquiring every page an instruction needs. FAULTS_SERVICED means at least
+    // one page was not resident, the fault was handled, and the instruction must be
+    // RESTARTED on a later tick (spec p.6).
+    enum class Acquire { ALL_RESIDENT, FAULTS_SERVICED, FAILED };
 
     void initialize(std::size_t maxOverallMem, std::size_t memPerFrame);
 
@@ -36,10 +37,13 @@ public:
     void registerProcess(int pid, std::size_t memBytes);
     void releaseProcess(int pid);
 
-    // Make the page holding `addr` resident. `pin` protects it from being chosen as a
-    // victim while the current instruction is still collecting its other pages.
-    Access ensureResident(int pid, std::size_t addr, bool pin);
-    void   unpinProcess(int pid);
+    // Make every page covering `addresses` resident TOGETHER, or change nothing. Acquiring
+    // them one page at a time livelocks: two processes sharing two frames each took one
+    // page, failed to get the second, dropped it, and stole the other's page on the next
+    // tick - forever, at full paging rate with zero instructions retired. Pages stay
+    // pinned until unpinProcess(), which is what lets a restarted instruction find them.
+    Acquire acquirePages(int pid, const std::vector<std::size_t>& addresses);
+    void    unpinProcess(int pid);
 
     // The scheduler stamps the current CPU tick before running the cores. A frame
     // loaded on tick N is not a replacement candidate until tick N+1, so a core can
@@ -48,7 +52,7 @@ public:
     // from the core before them, reporting 100% CPU use while achieving nothing.
     void   setTick(unsigned long long tick);
 
-    // Require residency (guaranteed by ensureResident) - reads/writes are little-endian
+    // Require residency (guaranteed by acquirePages) - reads/writes are little-endian
     // and may straddle a page boundary, so both bytes are translated separately.
     std::uint16_t readU16(int pid, std::size_t addr) const;
     void          writeU16(int pid, std::size_t addr, std::uint16_t value);
@@ -86,6 +90,7 @@ private:
     const std::uint8_t* translate(int pid, std::size_t addr) const;
     std::uint8_t*       translate(int pid, std::size_t addr);
     long long           takeVictimFrame();
+    long long           bringInLocked(int pid, std::size_t vpage);   // frame index, or -1
     void                writeStoreFile() const;
 
     std::vector<std::uint8_t> physical;      // the simulated RAM
