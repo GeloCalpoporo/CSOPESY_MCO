@@ -98,6 +98,8 @@ public:
     std::mutex               logMutex;  // guards printLogs (UI reads, CPU writes)
     std::vector<std::string> printLogs;
 
+    bool justServicedFault = false;
+
 private:
     MemoryManager* mm = nullptr;
 

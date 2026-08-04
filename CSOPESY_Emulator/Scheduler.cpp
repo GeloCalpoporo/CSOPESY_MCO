@@ -262,7 +262,7 @@ void Scheduler::schedulerLoop() {
                 }
 
                 // RR time slice counts every tick the process holds the core.
-                if (useRoundRobin) c.quantumLeft--;
+                if (useRoundRobin && !p->stalledOnMemory) c.quantumLeft--;
 
                 // Re-evaluate state after this tick. coreId is left untouched so the
                 // table keeps showing the last core a process held (never -1).
@@ -275,7 +275,7 @@ void Scheduler::schedulerLoop() {
                     sleeping.push_back(p);
                     c.proc = nullptr;
                 }
-                else if (useRoundRobin && c.quantumLeft <= 0) {   // quantum -> preempt
+                else if (useRoundRobin && !p->stalledOnMemory && c.quantumLeft <= 0) {   // quantum -> preempt
                     p->releasePages();
                     readyQueue.push_back(p);
                     c.proc = nullptr;

@@ -275,6 +275,7 @@ void Process::executeNextInstruction() {
     executeOne(ins);
     releasePages();
     stalledOnMemory = false;
+    justServicedFault = false; // change---------------
 
     currentLine++;
     if (currentLine >= static_cast<int>(instructions.size())) isFinished = true;
@@ -371,6 +372,7 @@ bool Process::ensurePages(const Instruction& ins) {
     if (r == MemoryManager::Acquire::FAULTS_SERVICED) {
         ++pageFaults;
         holdingPages = true;                          // keep them through the restart
+        justServicedFault = true;   // change------------
         return false;                                 // restart the instruction next tick
     }
     return true;
